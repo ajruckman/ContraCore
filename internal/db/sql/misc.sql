@@ -39,3 +39,6 @@ WITH answers AS (
 SELECT *
 FROM answers a
 WHERE is_inet(a."Answer");
+
+
+SELECT * FROM "Reverse";

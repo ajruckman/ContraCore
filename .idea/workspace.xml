@@ -2,21 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c298bfbd-6be9-45c2-b2b4-a0030aa3c00d" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/dataSources.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/db/db.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/db/log.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/db/sql/misc.sql" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/schema/log.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/serve/serve.go" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/internal/shared/shared.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Corefile" beforeDir="false" afterPath="$PROJECT_DIR$/Corefile" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.sh" beforeDir="false" afterPath="$PROJECT_DIR$/build.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/dnsvar/typemap.go" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pkg/plugin/plugin.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/plugin/plugin.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/db/sql/misc.sql" beforeDir="false" afterPath="$PROJECT_DIR$/internal/db/sql/misc.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/serve/serve.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/serve/serve.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -209,22 +197,22 @@
       <screen x="0" y="0" width="3072" height="1688" />
     </state>
     <state x="631" y="616" key="FileChooserDialogImpl/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573310273122" />
-    <state width="2101" height="487" key="GridCell.Tab.0.bottom" timestamp="1573332526160">
+    <state width="3031" height="486" key="GridCell.Tab.0.bottom" timestamp="1573334655171">
       <screen x="0" y="0" width="3072" height="1688" />
     </state>
-    <state width="2101" height="487" key="GridCell.Tab.0.bottom/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573332526160" />
-    <state width="2101" height="487" key="GridCell.Tab.0.center" timestamp="1573332526160">
+    <state width="3031" height="486" key="GridCell.Tab.0.bottom/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573334655171" />
+    <state width="3031" height="486" key="GridCell.Tab.0.center" timestamp="1573334655171">
       <screen x="0" y="0" width="3072" height="1688" />
     </state>
-    <state width="2101" height="487" key="GridCell.Tab.0.center/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573332526160" />
-    <state width="2101" height="487" key="GridCell.Tab.0.left" timestamp="1573332526160">
+    <state width="3031" height="486" key="GridCell.Tab.0.center/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573334655171" />
+    <state width="3031" height="486" key="GridCell.Tab.0.left" timestamp="1573334655170">
       <screen x="0" y="0" width="3072" height="1688" />
     </state>
-    <state width="2101" height="487" key="GridCell.Tab.0.left/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573332526160" />
-    <state width="2101" height="487" key="GridCell.Tab.0.right" timestamp="1573332526160">
+    <state width="3031" height="486" key="GridCell.Tab.0.left/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573334655170" />
+    <state width="3031" height="486" key="GridCell.Tab.0.right" timestamp="1573334655171">
       <screen x="0" y="0" width="3072" height="1688" />
     </state>
-    <state width="2101" height="487" key="GridCell.Tab.0.right/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573332526160" />
+    <state width="3031" height="486" key="GridCell.Tab.0.right/0.0.3072.1688/-2560.220.2560.1400@0.0.3072.1688" timestamp="1573334655171" />
     <state x="284" y="488" key="SettingsEditor" timestamp="1573307189648">
       <screen x="0" y="0" width="3072" height="1688" />
     </state>

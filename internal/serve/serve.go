@@ -23,23 +23,18 @@ func init() {
 func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
     ip := strings.Split(w.RemoteAddr().String(), ":")[0]
 
-    // https://stackoverflow.com/a/4083071/9911189
-    store := schema.Log{
-        Client: ip,
-    }
-
     if len(r.Question) > 1 {
         return 0, errors.New("this should never happen")
     }
 
-    for _, v := range r.Question {
-        store.Question = strings.TrimSuffix(v.Name, ".")
-        store.QuestionType = dns.TypeToString[v.Qtype]
+    // https://stackoverflow.com/a/4083071/9911189
+    store := schema.Log{
+        Client:       ip,
+        Question:     strings.TrimSuffix(r.Question[0].Name, "."),
+        QuestionType: dns.TypeToString[r.Question[0].Qtype],
     }
 
-    storedQueryLock.Lock()
-    storedQueries[r.Id] = store
-    storedQueryLock.Unlock()
+    storedQueries.Store(r.Id, store)
 
     shared.Log.Info(ip, " -> ", r.Id, " ", dns.TypeToString[r.Question[0].Qtype])
 
@@ -57,8 +52,7 @@ func logWorker() {
     }
 }
 
-var storedQueryLock = sync.Mutex{}
-var storedQueries = map[uint16]schema.Log{}
+var storedQueries sync.Map
 
 type ResponseInterceptor struct {
     dns.ResponseWriter
@@ -69,16 +63,19 @@ func NewResponseInterceptor(w dns.ResponseWriter) *ResponseInterceptor {
 }
 
 func (ri *ResponseInterceptor) WriteMsg(r *dns.Msg) error {
-    var stored schema.Log
-    var ok bool
+    var (
+        loaded interface{}
+        ok     bool
+        stored schema.Log
+    )
 
-    storedQueryLock.Lock()
-    if stored, ok = storedQueries[r.Id]; !ok {
-        storedQueryLock.Unlock()
+    if loaded, ok = storedQueries.Load(r.Id); !ok {
         shared.Log.Error("Unmatched query ID ", r.Id)
         goto done
     }
-    storedQueryLock.Unlock()
+
+    stored = loaded.(schema.Log)
+
     shared.Log.Info(stored.Client, " <- ", r.Id, " ", stored.QuestionType)
 
     for _, v := range r.Answer {
@@ -108,9 +105,7 @@ func (ri *ResponseInterceptor) WriteMsg(r *dns.Msg) error {
 
     logChannel <- stored
 
-    storedQueryLock.Lock()
-    delete(storedQueries, r.Id)
-    storedQueryLock.Unlock()
+    storedQueries.Delete(r.Id)
 
 done:
     return ri.ResponseWriter.WriteMsg(r)
