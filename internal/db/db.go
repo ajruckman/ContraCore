@@ -1,5 +1,7 @@
 package db
 
+//go:generate go run generate.go
+
 import (
     "github.com/jackc/pgx"
     "github.com/jackc/pgx/stdlib"
@@ -18,7 +20,7 @@ func init() {
 
     conf := pgx.ConnPoolConfig{
         ConnConfig: pgx.ConnConfig{
-            Host:     "localhost",
+            Host:     "10.3.0.16",
             User:     "contradbmgr",
             Password: "contradbmgr",
             Database: "contradb",
@@ -30,19 +32,4 @@ func init() {
     Err(err)
 
     XDB = sqlx.NewDb(stdlib.OpenDBFromPool(PDB), "pgx")
-
-    PDB.Exec(`
-
-CREATE TABLE IF NOT EXISTS "Log"
-(
-    "ID"           BIGSERIAL NOT NULL
-        CONSTRAINT "Log_pk" PRIMARY KEY,
-    "Time"         TIMESTAMP DEFAULT now(),
-    "Client"       TEXT,
-    "Question"     TEXT,
-    "QuestionType" TEXT,
-    "Answers"      TEXT[]
-);
-
-`)
 }
