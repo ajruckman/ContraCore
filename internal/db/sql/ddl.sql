@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS log
 CREATE TABLE IF NOT EXISTS rule
 (
     id      SERIAL NOT NULL,
-    domain  TEXT   NOT NULL,
-    tld     TEXT   NOT NULL,
-    sld     TEXT,
+--     domain  TEXT   NOT NULL,
+--     tld     TEXT   NOT NULL,
+--     sld     TEXT,
     pattern TEXT   NOT NULL,
 
     CONSTRAINT rules_pk PRIMARY KEY (id)

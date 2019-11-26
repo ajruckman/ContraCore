@@ -1,8 +1,6 @@
 package main
 
 import (
-    "bufio"
-    "bytes"
     "fmt"
     "io/ioutil"
     "net/http"
@@ -13,88 +11,90 @@ import (
     "github.com/ajruckman/ContraCore/internal/rulegen"
 )
 
-var body []byte
+var (
+    urls = []string{
+        "https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
+        "https://someonewhocares.org/hosts/hosts",
+        "https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
+        "https://www.encrypt-the-planet.com/downloads/hosts",
+    }
+    contents [][]byte
+)
 
 func init() {
-    fmt.Println("Init")
-    resp, err := http.Get("https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt")
-    Err(err)
-
-    body, err = ioutil.ReadAll(resp.Body)
-    Err(err)
-    fmt.Println("Rule byte length:", len(body))
+    for _, url := range urls {
+        fmt.Print("Reading ", url, "... ")
+        resp, err := http.Get(url)
+        Err(err)
+        read, err := ioutil.ReadAll(resp.Body)
+        Err(err)
+        contents = append(contents, read)
+        fmt.Println("done")
+    }
 }
 
 func main() {
-    //benchmark(25)
-    //var hosts []string
+    began := time.Now()
+    res, total := rulegen.ReadDomainScanners(rulegen.BlockV2, contents...)
 
-    rulegen.ReadDomainList(rulegen.BlockV1, bufio.NewScanner(bytes.NewReader(body)))
-
-    _, total, kept, ratio, dur := rulegen.ReadDomainList(rulegen.BlockV1,
-        bufio.NewScanner(bytes.NewReader(body)),
-        //    //"https://raw.githubusercontent.com/EnergizedProtection/block/master/blu/formats/hosts",
-        //    //"https://someonewhocares.org/hosts/hosts",
-    )
-
-    fmt.Println(total)
-    fmt.Println(kept)
-    fmt.Println(ratio)
-    fmt.Println(dur)
+    fmt.Println("Time: ", time.Since(began))
+    fmt.Println("Total:", total)
+    fmt.Println("Kept: ", len(res))
+    fmt.Println("Ratio:", float64(len(res))/float64(total))
 }
 
-var packs = []string{"spark", "bluGo", "blu", "basic", "ultimate", "unified"}
+//urls     = []string{"spark", "bluGo", "blu", "basic", "ultimate", "unified"}
 
-type Benchmark struct {
-    Pack     string
-    Total    int
-    Kept     int
-    Ratio    float64
-    Duration time.Duration
-}
-
-var results = map[string][]Benchmark{}
-
-func benchmark(count int) {
-    time.Sleep(time.Second * 5)
-
-    for i := 0; i < count; i++ {
-        // Primer
-        rulegen.ReadDomainList(rulegen.BlockV1, bufio.NewScanner(bytes.NewReader(body)))
-
-        for _, pack := range packs {
-            fmt.Println(fmt.Sprintf("Bench #%-4d of %s", i+1, pack))
-
-            _, total, kept, ratio, dur := rulegen.ReadDomainList(rulegen.BlockV1, bufio.NewScanner(bytes.NewReader(body)))
-
-            if _, ok := results[pack]; !ok {
-                results[pack] = []Benchmark{}
-            }
-            results[pack] = append(results[pack], Benchmark{
-                Pack:     pack,
-                Total:    total,
-                Kept:     kept,
-                Ratio:    ratio,
-                Duration: dur,
-            })
-
-            time.Sleep(time.Second * 3)
-        } //1269353, 1.375
-
-        time.Sleep(time.Second * 15)
-    }
-
-    fmt.Println()
-
-    for _, v := range results {
-        var sum time.Duration
-        for _, bench := range v {
-            sum += bench.Duration
-        }
-
-        c := v[0]
-        f := fmt.Sprintf("%s,%d,%d,%f,%s", c.Pack, c.Total, c.Kept, c.Ratio, (sum / time.Duration(count)).String())
-
-        fmt.Println(f)
-    }
-}
+//type Benchmark struct {
+//    Pack     string
+//    Total    int
+//    Kept     int
+//    Ratio    float64
+//    Duration time.Duration
+//}
+//
+//var results = map[string][]Benchmark{}
+//
+//func benchmark(count int) {
+//    time.Sleep(time.Second * 5)
+//
+//    for i := 0; i < count; i++ {
+//        // Primer
+//        rulegen.ReadDomainScanners(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
+//
+//        for _, pack := range packs {
+//            fmt.Println(fmt.Sprintf("Bench #%-4d of %s", i+1, pack))
+//
+//            _, total, kept, ratio, dur := rulegen.ReadDomainScanners(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
+//
+//            if _, ok := results[pack]; !ok {
+//                results[pack] = []Benchmark{}
+//            }
+//            results[pack] = append(results[pack], Benchmark{
+//                Pack:     pack,
+//                Total:    total,
+//                Kept:     kept,
+//                Ratio:    ratio,
+//                Duration: dur,
+//            })
+//
+//            time.Sleep(time.Second * 3)
+//        } //1269353, 1.375
+//
+//        time.Sleep(time.Second * 15)
+//    }
+//
+//    fmt.Println()
+//
+//    for _, v := range results {
+//        var sum time.Duration
+//        for _, bench := range v {
+//            sum += bench.Duration
+//        }
+//
+//        c := v[0]
+//        f := fmt.Sprintf("%s,%d,%d,%f,%s", c.Pack, c.Total, c.Kept, c.Ratio, (sum / time.Duration(count)).String())
+//
+//        fmt.Println(f)
+//    }
+//}
