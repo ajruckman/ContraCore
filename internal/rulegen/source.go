@@ -4,6 +4,7 @@ import (
     "bufio"
     "bytes"
     "strings"
+    "sync"
 
     . "github.com/ajruckman/xlib"
 )
@@ -23,7 +24,7 @@ func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]b
     //wg = sync.WaitGroup{}
     total = 0
     root = Node{
-        Children: &map[string]*Node{},
+        Children: &sync.Map{},
     }
 
     for _, content := range contents {

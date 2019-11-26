@@ -1,10 +1,16 @@
 package rulegen
 
+import (
+    "sync"
+)
+
 type Node struct {
     Value    string
-    Children *map[string]*Node
+    //Children *map[string]*Node
     Blocked  bool
     FQDN     string
+
+    Children *sync.Map
 }
 
 func BlockV2(n *Node, fqdn string, path []string) {
@@ -17,16 +23,19 @@ func BlockV2(n *Node, fqdn string, path []string) {
         if isLast {
             newNode := &Node{
                 Value:    dc,
-                Children: &(map[string]*Node{}),
+                //Children: &(map[string]*Node{}),
+                Children: &sync.Map{},
                 Blocked:  true,
                 FQDN:     fqdn,
             }
-            (*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
+            //(*cur.Children)[dc] = newNode
             return
         }
 
-        if v, ok := (*cur.Children)[dc]; ok {
-            cur = v
+        if v, ok := (*cur.Children).Load(dc); ok {
+        //if v, ok := (*cur.Children)[dc]; ok {
+            cur = v.(*Node)
 
             // This node is already blocked and a complete rule already exists
             // for this path. #A
@@ -36,10 +45,12 @@ func BlockV2(n *Node, fqdn string, path []string) {
         } else {
             newNode := &Node{
                 Value:    dc,
-                Children: &(map[string]*Node{}),
+                //Children: &(map[string]*Node{}),
+                Children: &sync.Map{},
             }
 
-            (*cur.Children)[dc] = newNode
+            //(*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
             cur = newNode
         }
     }
@@ -49,8 +60,9 @@ func BlockV3(n *Node, fqdn string, path []string) {
     cur := n
 
     for _, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
-            cur = v
+        //if v, ok := (*cur.Children)[dc]; ok {
+        if v, ok := (*cur.Children).Load(dc); ok {
+            cur = v.(*Node)
 
             // This node is already blocked and a complete rule already exists
             // for this path. #A
@@ -60,9 +72,11 @@ func BlockV3(n *Node, fqdn string, path []string) {
         } else {
             newNode := &Node{
                 Value:    dc,
-                Children: &(map[string]*Node{}),
+                //Children: &(map[string]*Node{}),
+                Children: &sync.Map{},
             }
-            (*cur.Children)[dc] = newNode
+            //(*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
             cur = newNode
         }
     }
@@ -76,8 +90,9 @@ func BlockV4(n *Node, fqdn string, path []string) {
     l := len(path) - 1
 
     for i, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
-            cur = v
+        if v, ok := (*cur.Children).Load(dc); ok {
+        //if v, ok := (*cur.Children)[dc]; ok {
+            cur = v.(*Node)
 
             // This node is already blocked and a complete rule already exists
             // for this path. #A
@@ -92,10 +107,11 @@ func BlockV4(n *Node, fqdn string, path []string) {
             // This should conserve memory; don't create a bunch of dangling
             // maps
             if i != l {
-                newNode.Children = &(map[string]*Node{})
+                newNode.Children = &sync.Map{}
             }
 
-            (*cur.Children)[dc] = newNode
+            //(*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
             cur = newNode
         }
     }
@@ -109,14 +125,15 @@ func BlockV5(n *Node, fqdn string, path []string) {
     l := len(path) - 1
 
     for i, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
+        if v, ok := (*cur.Children).Load(dc); ok {
+        //if v, ok := (*cur.Children)[dc]; ok {
             // This node is already blocked and a complete rule already exists
             // for this path. #A
-            if v.Blocked {
+            if v.(*Node).Blocked {
                 return
             }
 
-            cur = v
+            cur = v.(*Node)
         } else {
             newNode := &Node{
                 Value: dc,
@@ -125,10 +142,12 @@ func BlockV5(n *Node, fqdn string, path []string) {
             // This should conserve memory; don't create a bunch of dangling
             // maps
             if i != l {
-                newNode.Children = &(map[string]*Node{})
+                //newNode.Children = &(map[string]*Node{})
+                newNode.Children= &sync.Map{}
             }
 
-            (*cur.Children)[dc] = newNode
+            //(*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
             cur = newNode
         }
     }
@@ -142,14 +161,15 @@ func BlockV6(n *Node, fqdn string, path []string) {
     l := len(path) - 1
 
     for i, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
+        if v, ok := (*cur.Children).Load(dc); ok {
+        //if v, ok := (*cur.Children)[dc]; ok {
             // This node is already blocked and a complete rule already exists
             // for this path. #A
-            if v.Blocked {
+            if v.(*Node).Blocked {
                 return
             }
 
-            cur = v
+            cur = v.(*Node)
         } else {
             newNode := &Node{
                 Value: dc,
@@ -158,10 +178,11 @@ func BlockV6(n *Node, fqdn string, path []string) {
             // This should conserve memory; don't create a bunch of dangling
             // maps
             if i != l {
-                newNode.Children = &(map[string]*Node{})
+                newNode.Children = &sync.Map{}
             }
 
-            (*cur.Children)[dc] = newNode
+            //(*cur.Children)[dc] = newNode
+            (*cur.Children).Store(dc, newNode)
             cur = newNode
         }
     }
@@ -180,7 +201,12 @@ func Read(n *Node, result *[]string) {
         return // This should have no effect if #A works.
     }
 
-    for _, v := range *cur.Children {
-        Read(v, result)
-    }
+    cur.Children.Range(func(key interface{}, value interface{}) bool {
+        Read(value.(*Node), result)
+        return true
+    })
+
+    //for _, v := range (*cur.Children) {
+    //    Read(v, result)
+    //}
 }
