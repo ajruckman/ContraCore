@@ -14,6 +14,10 @@ import (
 
 var (
     urls = []string{
+        "https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
+        "https://raw.githubusercontent.com/EnergizedProtection/block/master/blu/formats/domains.txt",
+        "https://raw.githubusercontent.com/EnergizedProtection/block/master/basic/formats/domains.txt",
+        "https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
         "https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
         "https://someonewhocares.org/hosts/hosts",
         "https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
@@ -52,11 +56,11 @@ func main() {
     rV4 := testing.Benchmark(benchmarkRuleGenV4)
     fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
 
-    //rV5 := testing.Benchmark(benchmarkRuleGenV5)
-    //fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
-    //
-    //rV6 := testing.Benchmark(benchmarkRuleGenV6)
-    //fmt.Println("BlockV6:", rV6.T.Milliseconds(), rV6.String()+" -> "+rV6.MemString())
+    rV5 := testing.Benchmark(benchmarkRuleGenV5)
+    fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
+
+    rV6 := testing.Benchmark(benchmarkRuleGenV6)
+    fmt.Println("BlockV6:", rV6.T.Milliseconds(), rV6.String()+" -> "+rV6.MemString())
 
     //err := http.ListenAndServe(":8080", nil)
     //Err(err)

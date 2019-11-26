@@ -140,7 +140,11 @@ func BlockV5(n *Node, fqdn string, path []string) {
     l := len(path) - 1
 
     for i, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
+        cur.lock.Lock()
+        v, ok := (*cur.Children)[dc]
+        cur.lock.Unlock()
+
+        if ok {
             // This node is already blocked and a complete rule already exists
             // for this path. #A
             if v.Blocked {
@@ -159,7 +163,10 @@ func BlockV5(n *Node, fqdn string, path []string) {
                 newNode.Children = &(map[string]*Node{})
             }
 
+            cur.lock.Lock()
             (*cur.Children)[dc] = newNode
+            cur.lock.Unlock()
+
             cur = newNode
         }
     }
@@ -173,7 +180,11 @@ func BlockV6(n *Node, fqdn string, path []string) {
     l := len(path) - 1
 
     for i, dc := range path {
-        if v, ok := (*cur.Children)[dc]; ok {
+        cur.lock.Lock()
+        v, ok := (*cur.Children)[dc]
+        cur.lock.Unlock()
+
+        if ok {
             // This node is already blocked and a complete rule already exists
             // for this path. #A
             if v.Blocked {
@@ -192,7 +203,10 @@ func BlockV6(n *Node, fqdn string, path []string) {
                 newNode.Children = &(map[string]*Node{})
             }
 
+            cur.lock.Lock()
             (*cur.Children)[dc] = newNode
+            cur.lock.Unlock()
+
             cur = newNode
         }
     }
