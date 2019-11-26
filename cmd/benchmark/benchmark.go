@@ -52,11 +52,11 @@ func main() {
     rV4 := testing.Benchmark(benchmarkRuleGenV4)
     fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
 
-    rV5 := testing.Benchmark(benchmarkRuleGenV5)
-    fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
-
-    rV6 := testing.Benchmark(benchmarkRuleGenV6)
-    fmt.Println("BlockV6:", rV6.T.Milliseconds(), rV6.String()+" -> "+rV6.MemString())
+    //rV5 := testing.Benchmark(benchmarkRuleGenV5)
+    //fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
+    //
+    //rV6 := testing.Benchmark(benchmarkRuleGenV6)
+    //fmt.Println("BlockV6:", rV6.T.Milliseconds(), rV6.String()+" -> "+rV6.MemString())
 
     //err := http.ListenAndServe(":8080", nil)
     //Err(err)
@@ -82,7 +82,7 @@ func benchmarkRuleGenV6(b *testing.B) {
     benchmarkRuleGen(rulegen.BlockV6, b)
 }
 
-const numBench = 15
+const numBench = 3
 
 func benchmarkRuleGen(evaluator func(*rulegen.Node, string, []string), b *testing.B) {
     b.ReportAllocs()

@@ -14,9 +14,9 @@ const (
 )
 
 var (
-    //wg    = sync.WaitGroup{}
+    wg    = sync.WaitGroup{}
     total int
-    //guard = make(chan struct{}, maxPar)
+    guard = make(chan struct{}, maxPar)
     root  Node
 )
 
@@ -24,12 +24,17 @@ func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]b
     //wg = sync.WaitGroup{}
     total = 0
     root = Node{
-        Children: &sync.Map{},
+        Children: &(map[string]*Node{}),
     }
 
-    for _, content := range contents {
-        //wg.Add(1)
-        work(evaluator, content)
+    for i, content := range contents {
+        guard <- struct{}{}
+        wg.Add(1)
+
+        go work(evaluator, content, i)
+
+        //fmt.Println("Goroutine", i, "started")
+
         //wg.Add(1)
         //guard <- struct{}{}
         //
@@ -39,7 +44,7 @@ func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]b
     }
 
     //fmt.Println("Waiting")
-    //wg.Wait()
+    wg.Wait()
     //fmt.Println("Done")
 
     var res []string
@@ -52,7 +57,7 @@ func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]b
 // List of identifiers to match for before domains in the domain scanners.
 var prefixes = []string{"0.0.0.0", "127.0.0.1", "::", "::0", "::1"}
 
-func work(evaluator func(*Node, string, []string), content []byte) {
+func work(evaluator func(*Node, string, []string), content []byte, i int) {
     scanner := bufio.NewScanner(bytes.NewReader(content))
 
     for scanner.Scan() {
@@ -109,6 +114,7 @@ func work(evaluator func(*Node, string, []string), content []byte) {
         evaluator(&root, t, path)
     }
 
-    //wg.Done()
-    //<-guard
+    //fmt.Println("Goroutine", i, "done")
+    wg.Done()
+    <-guard
 }
