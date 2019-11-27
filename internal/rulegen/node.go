@@ -1,6 +1,7 @@
 package rulegen
 
 import (
+    "fmt"
     "sync"
 )
 
@@ -101,6 +102,10 @@ func BlockV4(n *Node, fqdn string, path []string) {
 
     for i, dc := range path {
         cur.lock.Lock()
+        if cur.Children == nil {
+            fmt.Println("=====", path, i, dc)
+            return
+        }
         v, ok := (*cur.Children)[dc]
         cur.lock.Unlock()
 
@@ -139,19 +144,29 @@ func BlockV5(n *Node, fqdn string, path []string) {
     cur := n
     l := len(path) - 1
 
+    cur.lock.Lock()
+
     for i, dc := range path {
-        cur.lock.Lock()
+        if cur.Children == nil {
+            fmt.Println("=-=-=", path, i, dc)
+            return
+        }
+
+        //cur.lock.Lock()
         v, ok := (*cur.Children)[dc]
-        cur.lock.Unlock()
+        //cur.lock.Unlock()
 
         if ok {
             // This node is already blocked and a complete rule already exists
             // for this path. #A
             if v.Blocked {
+                cur.lock.Unlock()
                 return
             }
 
+            cur.lock.Unlock()
             cur = v
+            cur.lock.Lock()
         } else {
             newNode := &Node{
                 Value: dc,
@@ -163,57 +178,19 @@ func BlockV5(n *Node, fqdn string, path []string) {
                 newNode.Children = &(map[string]*Node{})
             }
 
-            cur.lock.Lock()
+            //cur.lock.Lock()
             (*cur.Children)[dc] = newNode
-            cur.lock.Unlock()
+            //cur.lock.Unlock()
 
+            cur.lock.Unlock()
             cur = newNode
+            cur.lock.Lock()
         }
     }
 
     cur.Blocked = true
     cur.FQDN = fqdn
-}
-
-func BlockV6(n *Node, fqdn string, path []string) {
-    cur := n
-    l := len(path) - 1
-
-    for i, dc := range path {
-        cur.lock.Lock()
-        v, ok := (*cur.Children)[dc]
-        cur.lock.Unlock()
-
-        if ok {
-            // This node is already blocked and a complete rule already exists
-            // for this path. #A
-            if v.Blocked {
-                return
-            }
-
-            cur = v
-        } else {
-            newNode := &Node{
-                Value: dc,
-            }
-
-            // This should conserve memory; don't create a bunch of dangling
-            // maps
-            if i != l {
-                newNode.Children = &(map[string]*Node{})
-            }
-
-            cur.lock.Lock()
-            (*cur.Children)[dc] = newNode
-            cur.lock.Unlock()
-
-            cur = newNode
-        }
-    }
-
-    cur.Blocked = true
-    cur.FQDN = fqdn
-    cur.Children = nil
+    cur.lock.Unlock()
 }
 
 func Read(n *Node, result *[]string) {

@@ -1,12 +1,9 @@
 package rulegen
 
 import (
-    "bufio"
-    "bytes"
+    "fmt"
     "strings"
     "sync"
-
-    . "github.com/ajruckman/xlib"
 )
 
 const (
@@ -20,28 +17,46 @@ var (
     root  Node
 )
 
-func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]byte) ([]string, int) {
+func ReadDomainScanners(evaluator func(*Node, string, []string), contents []string) ([]string, int) {
     //wg = sync.WaitGroup{}
     total = 0
     root = Node{
         Children: &(map[string]*Node{}),
     }
 
-    for i, content := range contents {
+    // Chunk code from: https://stackoverflow.com/a/35179941/9911189
+    chunkSize := (len(contents) + maxPar - 1) / maxPar
+
+    for i := 0; i < len(contents); i += chunkSize {
+        end := i + chunkSize
+
+        if end > len(contents) {
+            end = len(contents)
+        }
+
         guard <- struct{}{}
         wg.Add(1)
 
-        go work(evaluator, content, i)
+        //fmt.Println(fmt.Sprintf("Goroutine %d -> %d of %d starting", i, end, len(contents)))
 
-        //fmt.Println("Goroutine", i, "started")
-
-        //wg.Add(1)
-        //guard <- struct{}{}
-        //
-        //go func() {
-        //    work(evaluator, content)
-        //}()
+        go work(evaluator, contents[i:end], i)
     }
+
+    //for i, content := range contents {
+    //    guard <- struct{}{}
+    //    wg.Add(1)
+    //
+    //    go work(evaluator, content, i)
+    //
+    //    //fmt.Println("Goroutine", i, "started")
+    //
+    //    //wg.Add(1)
+    //    //guard <- struct{}{}
+    //    //
+    //    //go func() {
+    //    //    work(evaluator, content)
+    //    //}()
+    //}
 
     //fmt.Println("Waiting")
     wg.Wait()
@@ -51,19 +66,29 @@ func ReadDomainScanners(evaluator func(*Node, string, []string), contents ...[]b
     Read(&root, &res)
     //fmt.Println(len(res))
 
+    seen := map[string]struct{}{}
+
+    for _, r := range res {
+        _, ok := seen[r]
+        if ok {
+            fmt.Println("--->", r)
+        }
+    }
+
     return res, total
 }
 
 // List of identifiers to match for before domains in the domain scanners.
 var prefixes = []string{"0.0.0.0", "127.0.0.1", "::", "::0", "::1"}
 
-func work(evaluator func(*Node, string, []string), content []byte, i int) {
-    scanner := bufio.NewScanner(bytes.NewReader(content))
+func work(evaluator func(*Node, string, []string), content []string, i int) {
+    //scanner := bufio.NewScanner(bytes.NewReader(content))
 
-    for scanner.Scan() {
-        Err(scanner.Err())
+    for _, t := range content {
+    //for scanner.Scan() {
+    //    Err(scanner.Err())
 
-        t := scanner.Text()
+        //t := scanner.Text()
 
         if strings.HasPrefix(t, "#") {
             continue
