@@ -13,6 +13,6 @@ func BenchmarkRuleGen(b *testing.B) {
     b.SetBytes(contentTotals * int64(b.N))
 
     for n := 0; n < b.N; n++ {
-        rulegen.ReadDomainScanners(rulegen.BlockV6, contents...)
+        rulegen.ProcessDomainSources(rulegen.BlockV6, contents...)
     }
 }

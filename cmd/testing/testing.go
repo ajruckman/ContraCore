@@ -35,7 +35,7 @@ func init() {
 
 func main() {
     began := time.Now()
-    res, total := rulegen.ReadDomainScanners(rulegen.BlockV2, contents...)
+    res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
 
     fmt.Println("Time: ", time.Since(began))
     fmt.Println("Total:", total)
@@ -60,12 +60,12 @@ func main() {
 //
 //    for i := 0; i < count; i++ {
 //        // Primer
-//        rulegen.ReadDomainScanners(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
+//        rulegen.ProcessDomainSources(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
 //
 //        for _, pack := range packs {
 //            fmt.Println(fmt.Sprintf("Bench #%-4d of %s", i+1, pack))
 //
-//            _, total, kept, ratio, dur := rulegen.ReadDomainScanners(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
+//            _, total, kept, ratio, dur := rulegen.ProcessDomainSources(rulegen.BlockV2, bufio.NewScanner(bytes.NewReader(body)))
 //
 //            if _, ok := results[pack]; !ok {
 //                results[pack] = []Benchmark{}

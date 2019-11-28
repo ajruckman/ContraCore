@@ -2,11 +2,14 @@ package main
 
 import (
     "bufio"
+    "errors"
     "fmt"
     "net/http"
     _ "net/http/pprof"
+    "runtime"
     "strings"
     "testing"
+    "time"
 
     . "github.com/ajruckman/xlib"
 
@@ -15,13 +18,13 @@ import (
 
 var (
     urls = []string{
-        "https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
-        "https://raw.githubusercontent.com/EnergizedProtection/block/master/blu/formats/domains.txt",
-        "https://raw.githubusercontent.com/EnergizedProtection/block/master/basic/formats/domains.txt",
-        "https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
+        //"https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
+        //"https://raw.githubusercontent.com/EnergizedProtection/block/master/blu/formats/domains.txt",
+        //"https://raw.githubusercontent.com/EnergizedProtection/block/master/basic/formats/domains.txt",
+        //"https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
         "https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
-        "https://someonewhocares.org/hosts/hosts",
-        "https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
+        //"https://someonewhocares.org/hosts/hosts",
+        //"https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
         //"https://www.encrypt-the-planet.com/downloads/hosts",
     }
     contents []string
@@ -56,6 +59,18 @@ func init() {
 }
 
 func main() {
+
+    began := time.Now()
+    res, totalValid := rulegen.ProcessDomainSources(rulegen.BlockV4, contents)
+
+    fmt.Println()
+    fmt.Println("Time: ", time.Since(began))
+    fmt.Println("Total:", totalValid)
+    fmt.Println("Kept: ", len(res))
+    fmt.Println("Ratio:", float64(len(res))/float64(totalValid))
+
+    return
+
     //testing.Benchmark(benchmarkRuleGenV2) // Seed
 
     //rV2 := testing.Benchmark(benchmarkRuleGenV2)
@@ -65,34 +80,60 @@ func main() {
     //fmt.Println("BlockV3:", rV3.T.Milliseconds(), rV3.String()+" -> "+rV3.MemString())
 
     for i := 0; i < 50; i++ {
-        rV4 := testing.Benchmark(benchmarkRuleGenV4)
-        fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
 
-        rV5 := testing.Benchmark(benchmarkRuleGenV5)
-        fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
+        {
+            rV4 := testing.Benchmark(benchmarkRuleGenV4)
+            fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
+        }
+
+        //runtime.GC()
+        //time.Sleep(time.Second)
+        //
+        //{
+        //    rV5 := testing.Benchmark(benchmarkRuleGenV5)
+        //    fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
+        //}
+
+        runtime.GC()
+        time.Sleep(time.Second)
+
+        {
+            rV4 := testing.Benchmark(benchmarkRuleGenV4)
+            fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
+        }
+
+        //runtime.GC()
+        //time.Sleep(time.Second)
+        //
+        //{
+        //    rV5 := testing.Benchmark(benchmarkRuleGenV5)
+        //    fmt.Println("BlockV5:", rV5.T.Milliseconds(), rV5.String()+" -> "+rV5.MemString())
+        //}
+        //
+        //fmt.Println()
     }
 
     //err := http.ListenAndServe(":8080", nil)
     //Err(err)
 }
 
-func benchmarkRuleGenV2(b *testing.B) {
-    benchmarkRuleGen(rulegen.BlockV2, b, "v2")
-}
-
-func benchmarkRuleGenV3(b *testing.B) {
-    benchmarkRuleGen(rulegen.BlockV3, b, "v3")
-}
+//func benchmarkRuleGenV2(b *testing.B) {
+//    benchmarkRuleGen(rulegen.BlockV2, b, "v2")
+//}
+//
+//func benchmarkRuleGenV3(b *testing.B) {
+//    benchmarkRuleGen(rulegen.BlockV3, b, "v3")
+//}
 
 func benchmarkRuleGenV4(b *testing.B) {
     benchmarkRuleGen(rulegen.BlockV4, b, "v4")
 }
 
-func benchmarkRuleGenV5(b *testing.B) {
-    benchmarkRuleGen(rulegen.BlockV5, b, "v5")
-}
+//func benchmarkRuleGenV5(b *testing.B) {
+//    benchmarkRuleGen(rulegen.BlockV5, b, "v5")
+//}
 
-const numBench = 10
+const numBench = 50
 const expect = 817906
 
 var good []string
@@ -103,7 +144,7 @@ func benchmarkRuleGen(evaluator func(*rulegen.Node, string, []string), b *testin
 
     //for n := 0; n < b.N; n++ {
     for n := 0; n < numBench; n++ {
-        res, _ := rulegen.ReadDomainScanners(evaluator, contents)
+        res, _ := rulegen.ProcessDomainSources(evaluator, contents)
         if len(res) != expect {
             fmt.Println(len(res), name)
 
@@ -111,6 +152,7 @@ func benchmarkRuleGen(evaluator func(*rulegen.Node, string, []string), b *testin
                 fmt.Println(len(good), len(res), difference(good, res))
             }
 
+            panic(errors.New("length mismatch"))
             //b.FailNow()
         } else {
             good = res
