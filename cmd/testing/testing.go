@@ -4,11 +4,8 @@ import (
     "fmt"
     "io/ioutil"
     "net/http"
-    "time"
 
     . "github.com/ajruckman/xlib"
-
-    "github.com/ajruckman/ContraCore/internal/rulegen"
 )
 
 var (
@@ -34,13 +31,13 @@ func init() {
 }
 
 func main() {
-    began := time.Now()
-    res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
-
-    fmt.Println("Time: ", time.Since(began))
-    fmt.Println("Total:", total)
-    fmt.Println("Kept: ", len(res))
-    fmt.Println("Ratio:", float64(len(res))/float64(total))
+    //began := time.Now()
+    //res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
+    //
+    //fmt.Println("Time: ", time.Since(began))
+    //fmt.Println("Total:", total)
+    //fmt.Println("Kept: ", len(res))
+    //fmt.Println("Ratio:", float64(len(res))/float64(total))
 }
 
 //urls     = []string{"spark", "bluGo", "blu", "basic", "ultimate", "unified"}

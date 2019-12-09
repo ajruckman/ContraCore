@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd $GOPATH/src/github.com/ajruckman/ContraCore/internal/db || exit
+cd $GOPATH/src/github.com/ajruckman/ContraCore/internal/provision || exit
 go generate
 
 rm -rf $GOPATH/pkg/mod/github.com/ajruckman/!contra!core@v0.0.1/*

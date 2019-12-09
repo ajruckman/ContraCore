@@ -103,16 +103,16 @@ func BlockV4(n *Node, fqdn string, path []string) {
 
             // This node is already blocked and a complete rule already exists
             // for this path. #A
-            if cur.Blocked {
-                return
-            }
+            //if cur.Blocked {
+            //    return
+            //}
         } else {
-            newNode := &Node{
+            newNode := Node{
                 Value: dc,
             }
 
-            cur.Children.Store(dc, newNode)
-            cur = newNode
+            cur.Children.Store(dc, &newNode)
+            cur = &newNode
         }
     }
 

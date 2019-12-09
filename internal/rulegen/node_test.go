@@ -7,12 +7,7 @@ import (
 )
 
 func TestBlockV4(t *testing.T) {
-    var (
-        root = Node{
-            Children: &(map[string]*Node{}),
-        }
-        res []string
-    )
+    var res []string
 
     // Block all domains in 'testSet1'.
     for _, domain := range testSet1 {

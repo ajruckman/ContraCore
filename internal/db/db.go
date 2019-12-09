@@ -3,33 +3,25 @@ package db
 //go:generate go run generate.go
 
 import (
-    "github.com/jackc/pgx"
-    "github.com/jackc/pgx/stdlib"
+    "github.com/jackc/pgx/v4"
+    "github.com/jackc/pgx/v4/stdlib"
     "github.com/jmoiron/sqlx"
 
     . "github.com/ajruckman/xlib"
 )
 
 var (
-    PDB *pgx.ConnPool
+    PDB *pgx.Conn
     XDB *sqlx.DB
 )
 
 func init() {
+    conf := `postgres://contradbmgr:contradbmgr@10.3.0.16/flowmandb`
+
     var err error
-
-    conf := pgx.ConnPoolConfig{
-        ConnConfig: pgx.ConnConfig{
-            Host:     "10.3.0.16",
-            User:     "contradbmgr",
-            Password: "contradbmgr",
-            Database: "contradb",
-        },
-        MaxConnections: 32,
-    }
-
-    PDB, err = pgx.NewConnPool(conf)
+    XDB, err = sqlx.Connect("pgx", conf)
     Err(err)
 
-    XDB = sqlx.NewDb(stdlib.OpenDBFromPool(PDB), "pgx")
+    PDB, err = stdlib.AcquireConn(XDB.DB)
+    Err(err)
 }

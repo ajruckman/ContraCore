@@ -9,6 +9,7 @@ import (
     "github.com/miekg/dns"
 
     _ "github.com/ajruckman/ContraCore/internal/db"
+    _ "github.com/ajruckman/ContraCore/internal/provision" // Provision DB
     "github.com/ajruckman/ContraCore/internal/serve"
 )
 
