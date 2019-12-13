@@ -14,6 +14,8 @@ require (
 	github.com/miekg/dns v1.1.22
 	github.com/shopspring/decimal v0.0.0-20191009025716-f1972eb1d1f5 // indirect
 	github.com/stretchr/testify v1.4.0
+	github.com/tevino/abool v0.0.0-20170917061928-9b9efcf221b5
+	go.uber.org/atomic v1.4.0
 	gonum.org/v1/netlib v0.0.0-20191031114514-eccb95939662 // indirect
 	gonum.org/v1/plot v0.0.0-20191107103940-ca91d9d40d0a
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect

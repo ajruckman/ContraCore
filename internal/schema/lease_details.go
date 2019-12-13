@@ -6,7 +6,6 @@ import (
 )
 
 type LeaseDetails struct {
-    ID       uint64
     Time     time.Time
     Op       string
     MAC      string

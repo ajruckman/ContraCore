@@ -1,6 +1,7 @@
 package provision
 
 import (
+    "context"
     "fmt"
 
     "github.com/ajruckman/ContraCore/internal/db"
@@ -8,7 +9,7 @@ import (
 
 func init() {
     fmt.Println(`Provisioning database`)
-    _, err := db.PDB.Exec(`
+    _, err := db.PDB.Exec(context.Background(),`
 CREATE TABLE IF NOT EXISTS log
 (
     id            BIGSERIAL NOT NULL,

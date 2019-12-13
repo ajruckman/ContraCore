@@ -5,6 +5,6 @@ import (
 )
 
 func InsertDefaultConfig() {
-    _, err := PDB.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
+    _, err := XDB.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
     Err(err)
 }

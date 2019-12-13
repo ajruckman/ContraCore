@@ -40,7 +40,7 @@ func respondWithDynamicDNS(w dns.ResponseWriter, r *dns.Msg, qu dns.Question, nm
         return true, dns.RcodeServerFailure, err
     }
 
-    clog.Info("lease does not exist: ", nm)
+    //clog.Info("lease does not exist: ", nm)
 
     return
 }
@@ -101,7 +101,7 @@ func RespondWithCode(w dns.ResponseWriter, r *dns.Msg, code int) error {
     m := new(dns.Msg)
     m.SetReply(r)
     m.Authoritative = true
-    m.Compress = true
+    //m.Compress = true
     m.RecursionAvailable = true
     m.Rcode = code
 

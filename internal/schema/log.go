@@ -13,4 +13,6 @@ type Log struct {
     Answers        []string  `db:"answers"`
     ClientHostname string    `db:"client_hostname"`
     ClientMAC      string    `db:"client_mac"`
+
+    Stored time.Time `db:"-"`
 }

@@ -38,16 +38,6 @@ CREATE TABLE IF NOT EXISTS lease
     CONSTRAINT lease_pk PRIMARY KEY (id)
 );
 
-CREATE OR REPLACE VIEW lease_details AS
-SELECT lease.*, o.vendor
-FROM lease
-     LEFT OUTER JOIN oui o ON trunc(o.mac)::TEXT ILIKE (left(lease.mac, 9) || '%')
-WHERE (id, ip) IN (
-    SELECT max(id), ip
-    FROM lease
-    GROUP BY ip)
-ORDER BY id;
-
 ----- OUI
 CREATE TABLE IF NOT EXISTS oui
 (

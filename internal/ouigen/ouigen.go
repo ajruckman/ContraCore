@@ -2,13 +2,14 @@ package ouigen
 
 import (
     "bufio"
+    "context"
     "fmt"
     "net"
     "net/http"
     "regexp"
 
     . "github.com/ajruckman/xlib"
-    "github.com/jackc/pgx"
+    "github.com/jackc/pgx/v4"
 
     "github.com/ajruckman/ContraCore/internal/db"
 )
@@ -16,7 +17,7 @@ import (
 var matchOUI = regexp.MustCompile(`^([A-z0-9]{2}-[A-z0-9]{2}-[A-z0-9]{2})\s+\(hex\)\s+(.*)$`)
 
 func GenOUI() {
-    _, err := db.PDB.Exec(`TRUNCATE TABLE oui;`)
+    _, err := db.XDB.Exec(`TRUNCATE TABLE oui;`)
     Err(err)
 
     var res [][]interface{}
@@ -40,6 +41,6 @@ func GenOUI() {
         }
     }
 
-    _, err = db.PDB.CopyFrom(pgx.Identifier{"oui"}, []string{"mac", "vendor"}, pgx.CopyFromRows(res))
+    _, err = db.PDB.CopyFrom(context.Background(), pgx.Identifier{"oui"}, []string{"mac", "vendor"}, pgx.CopyFromRows(res))
     Err(err)
 }

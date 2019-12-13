@@ -2,12 +2,14 @@ package rulegen
 
 import (
     "sync"
+
+    "github.com/tevino/abool"
 )
 
 type Node struct {
-    Value    string
-    Blocked  bool
-    FQDN     string
+    Value   string
+    Blocked *abool.AtomicBool
+    FQDN    string
 
     Children sync.Map
 }
@@ -103,12 +105,13 @@ func BlockV4(n *Node, fqdn string, path []string) {
 
             // This node is already blocked and a complete rule already exists
             // for this path. #A
-            //if cur.Blocked {
-            //    return
-            //}
+            if cur.Blocked.IsSet() {
+                return
+            }
         } else {
             newNode := Node{
-                Value: dc,
+                Value:   dc,
+                Blocked: abool.New(),
             }
 
             cur.Children.Store(dc, &newNode)
@@ -116,7 +119,7 @@ func BlockV4(n *Node, fqdn string, path []string) {
         }
     }
 
-    cur.Blocked = true
+    cur.Blocked.Set()
     cur.FQDN = fqdn
 }
 
@@ -151,7 +154,7 @@ func BlockV4(n *Node, fqdn string, path []string) {
 func Read(n *Node, result *[]string) {
     cur := n
 
-    if cur.Blocked {
+    if cur.Blocked.IsSet() {
         *result = append(*result, cur.FQDN)
 
         return // This should have no effect if #A works.

@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "testing"
     "time"
 
@@ -43,26 +44,27 @@ func BenchmarkDummyStart(b *testing.B) {
 //    }
 //}
 
-func BenchmarkProcessFromURLsNoPointers(b *testing.B) {
-    b.ReportAllocs()
-
-    for i := 0; i < b.N; i++ {
-        began := time.Now()
-        res, _ := rulegen.ProcessFromURLs(urls)
-        _ = began
-        _ = res
-        //fmt.Println(len(res), time.Since(began))
-    }
-}
+//func BenchmarkProcessFromURLsNoPointers(b *testing.B) {
+//    b.ReportAllocs()
+//
+//    for i := 0; i < b.N; i++ {
+//        began := time.Now()
+//        res, _ := rulegen.ProcessFromURLs(urls)
+//        _ = began
+//        _ = res
+//        //fmt.Println(len(res), time.Since(began))
+//    }
+//}
 
 func BenchmarkProcessFromURLsWithPointers(b *testing.B) {
     b.ReportAllocs()
 
-    for i := 0; i < b.N; i++ {
+    //for i := 0; i < b.N; i++ {
         began := time.Now()
-        res, _ := rulegen.ProcessFromURLsPointers(urls)
+        res, total := rulegen.ProcessFromURLsPointers(urls)
         _ = began
         _ = res
+        fmt.Println(total)
         //fmt.Println(len(res), time.Since(began))
-    }
+    //}
 }

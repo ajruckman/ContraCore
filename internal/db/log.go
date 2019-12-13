@@ -1,11 +1,13 @@
 package db
 
 import (
+    "context"
+
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
 func Log(log schema.Log) error {
-    _, err := PDB.Exec(`
+    _, err := PDB.Exec(context.Background(), `
 
 INSERT
 INTO log (client, question, question_type, answers, client_hostname, client_mac)

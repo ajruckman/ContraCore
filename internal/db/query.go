@@ -10,7 +10,7 @@ import (
 )
 
 func GetLeaseDetails() (res []schema.LeaseDetails) {
-    rows, err := XDB.Queryx(`SELECT id, time, op, mac, ip, coalesce(hostname, '') AS hostname, coalesce(vendor, '') AS vendor FROM lease_details;`)
+    rows, err := XDB.Queryx(`SELECT time, op, mac, ip, coalesce(hostname, '') AS hostname, coalesce(vendor, '') AS vendor FROM lease_details;`)
     Err(err)
 
     defer rows.Close()
@@ -21,7 +21,7 @@ func GetLeaseDetails() (res []schema.LeaseDetails) {
         Err(err)
 
         res = append(res, schema.LeaseDetails{
-            ID:       n.ID,
+            //ID:       n.ID,
             Time:     n.Time,
             Op:       n.Op,
             MAC:      n.MAC,
@@ -35,7 +35,7 @@ func GetLeaseDetails() (res []schema.LeaseDetails) {
 }
 
 type internalLeaseDetails struct {
-    ID       uint64      `db:"id"`
+    //ID       uint64      `db:"id"`
     Time     time.Time   `db:"time"`
     Op       string      `db:"op"`
     MAC      string      `db:"mac"`

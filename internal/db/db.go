@@ -16,7 +16,7 @@ var (
 )
 
 func init() {
-    conf := `postgres://contradbmgr:contradbmgr@10.3.0.16/flowmandb`
+    conf := `postgres://contradbmgr:contradbmgr@10.3.0.16/contradb`
 
     var err error
     XDB, err = sqlx.Connect("pgx", conf)
