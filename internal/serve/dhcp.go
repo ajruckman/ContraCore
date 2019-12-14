@@ -3,20 +3,23 @@ package serve
 import (
     "strings"
 
+    . "github.com/ajruckman/xlib"
+
     "github.com/ajruckman/ContraCore/internal/db"
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
-var dhcpCacheMap = map[string][]schema.LeaseDetails{}
+var DHCPCache = map[string][]schema.LeaseDetails{}
 
-func dhcpCache() {
-    leases := db.GetLeaseDetails()
+func cacheDHCP() {
+    leases, err := db.GetLeaseDetails()
+    Err(err)
 
     for _, lease := range leases {
         hostname := strings.ToLower(lease.Hostname)
-        if _, exists := dhcpCacheMap[hostname]; !exists {
-            dhcpCacheMap[hostname] = []schema.LeaseDetails{}
+        if _, exists := DHCPCache[hostname]; !exists {
+            DHCPCache[hostname] = []schema.LeaseDetails{}
         }
-        dhcpCacheMap[hostname] = append(dhcpCacheMap[hostname], lease)
+        DHCPCache[hostname] = append(DHCPCache[hostname], lease)
     }
 }

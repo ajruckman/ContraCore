@@ -2,20 +2,23 @@ package serve
 
 import (
     "net"
+    "strings"
 
     "github.com/coredns/coredns/request"
     "github.com/miekg/dns"
 )
 
-func respondWithDynamicDNS(w dns.ResponseWriter, r *dns.Msg, qu dns.Question, nm string, iw *ResponseInterceptor) (ret bool, rcode int, err error) {
-    if v, ok := dhcpCacheMap[nm]; ok {
+func respondWithDynamicDNS(q *queryContext) (ret bool, rcode int, err error) {
+    if v, ok := DHCPCache[strings.ToLower(q.domain)]; ok {
+        q.action = "answer" // TODO: Special action for RcodeServerFailure?
+
         var m *dns.Msg
 
         for _, lease := range v {
             if lease.IP.To4() != nil {
-                if qu.Qtype == dns.TypeA {
-                    m = GenResponse(w, r, qu.Qtype, lease.IP.To4().String())
-                    err = iw.WriteMsg(m)
+                if q.qu.Qtype == dns.TypeA {
+                    m = GenResponse(q.r, q.qu.Qtype, lease.IP.To4().String())
+                    err = q.Respond(m)
                     clog.Info("lease IP is IPv4, question is A")
                     return true, dns.RcodeSuccess, err
                 } else {
@@ -24,9 +27,9 @@ func respondWithDynamicDNS(w dns.ResponseWriter, r *dns.Msg, qu dns.Question, nm
                 }
 
             } else if lease.IP.To16() != nil {
-                if qu.Qtype == dns.TypeAAAA {
-                    m = GenResponse(w, r, qu.Qtype, lease.IP.To16().String())
-                    err = iw.WriteMsg(m)
+                if q.qu.Qtype == dns.TypeAAAA {
+                    m = GenResponse(q.r, q.qu.Qtype, lease.IP.To16().String())
+                    err = q.Respond(m)
                     clog.Info("lease IP is IPv6, question is AAAA")
                     return true, dns.RcodeSuccess, err
                 } else {
@@ -36,7 +39,9 @@ func respondWithDynamicDNS(w dns.ResponseWriter, r *dns.Msg, qu dns.Question, nm
             }
         }
 
-        err = RespondWithCode(w, r, dns.RcodeServerFailure)
+        clog.Error("lease with hostname '", q.domain, "' exists but query type is not A or AAAA")
+        m = RespondWithCode(q.r, dns.RcodeServerFailure)
+        err = q.Respond(m)
         return true, dns.RcodeServerFailure, err
     }
 
@@ -45,7 +50,42 @@ func respondWithDynamicDNS(w dns.ResponseWriter, r *dns.Msg, qu dns.Question, nm
     return
 }
 
-func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *dns.Msg {
+func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
+    if ruleCache.Check(q.domain) {
+        q.action = "block"
+        var m *dns.Msg
+        var v string
+
+        switch q.qu.Qtype {
+        case dns.TypeA:
+            v = "0.0.0.0"
+            m = GenResponse(q.r, q.qu.Qtype, "0.0.0.0")
+
+        case dns.TypeAAAA:
+            v = "::"
+            m = GenResponse(q.r, q.qu.Qtype, "::")
+
+        case dns.TypeCNAME:
+            v = ""
+            m = GenResponse(q.r, q.qu.Qtype, "")
+
+        default:
+            v = "-"
+        }
+
+        m = GenResponse(q.r, q.qu.Qtype, v)
+
+        clog.Info("Blocking query '", q.domain, "' with value '", v, "'")
+        err = q.Respond(m)
+
+        return true, dns.RcodeSuccess, err
+    }
+
+    return
+}
+
+//func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *dns.Msg {
+func GenResponse(r *dns.Msg, qtype uint16, value string) *dns.Msg {
     m := new(dns.Msg)
     m.SetReply(r)
     m.Authoritative = true
@@ -53,7 +93,7 @@ func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *
     m.Rcode = dns.RcodeSuccess
 
     var rr dns.RR
-    state := request.Request{W: w, Req: r}
+    state := request.Request{Req: r}
 
     switch qtype {
     case dns.TypeA:
@@ -87,7 +127,7 @@ func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *
         rr = &dns.ANY{
             Hdr: dns.RR_Header{
                 Name:   state.QName(),
-                Rrtype: dns.TypeCNAME,
+                Rrtype: dns.TypeANY,
                 Class:  state.QClass(),
             },
         }
@@ -97,7 +137,8 @@ func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *
     return m
 }
 
-func RespondWithCode(w dns.ResponseWriter, r *dns.Msg, code int) error {
+//func RespondWithCode(w dns.ResponseWriter, r *dns.Msg, code int) error {
+func RespondWithCode(r *dns.Msg, code int) *dns.Msg {
     m := new(dns.Msg)
     m.SetReply(r)
     m.Authoritative = true
@@ -105,5 +146,5 @@ func RespondWithCode(w dns.ResponseWriter, r *dns.Msg, code int) error {
     m.RecursionAvailable = true
     m.Rcode = code
 
-    return w.WriteMsg(m)
+    return m
 }

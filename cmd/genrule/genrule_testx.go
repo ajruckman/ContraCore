@@ -56,15 +56,17 @@ func BenchmarkDummyStart(b *testing.B) {
 //    }
 //}
 
-func BenchmarkProcessFromURLsWithPointers(b *testing.B) {
+func benchmarkProcessFromURLsWithPointers(b *testing.B) {
     b.ReportAllocs()
+    b.N =1
 
     //for i := 0; i < b.N; i++ {
         began := time.Now()
-        res, total := rulegen.ProcessFromURLsPointers(urls)
+        res, total := rulegen.GenFromURLs(urls)
         _ = began
         _ = res
-        fmt.Println(total)
+        fmt.Println("=>", total)
         //fmt.Println(len(res), time.Since(began))
     //}
+
 }

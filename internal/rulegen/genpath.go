@@ -5,6 +5,8 @@ import (
 )
 
 func GenPath(domain string) []string {
+
+
     dcs := strings.Split(domain, ".")
 
     for i := len(dcs)/2 - 1; i >= 0; i-- {

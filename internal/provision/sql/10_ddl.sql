@@ -3,14 +3,16 @@ CREATE TABLE IF NOT EXISTS log
 (
     id              BIGSERIAL NOT NULL,
     time            TIMESTAMP NOT NULL DEFAULT now(),
-    client          INET,
-    question        TEXT,
-    question_type   TEXT,
+    client          INET      NOT NULL,
+    question        TEXT      NOT NULL,
+    question_type   TEXT      NOT NULL,
+    action          TEXT      NOT NULL,
     answers         TEXT[],
     client_hostname TEXT,
     client_mac      TEXT,
 
-    CONSTRAINT log_pk PRIMARY KEY (id)
+    CONSTRAINT log_pk PRIMARY KEY (id),
+    CONSTRAINT log_action_chk CHECK (action IN ('answer', 'restrict', 'block', 'pass'))
 );
 
 CREATE INDEX IF NOT EXISTS "log_question_answers_idx" ON log (question, answers);
@@ -19,8 +21,10 @@ CREATE INDEX IF NOT EXISTS "log_question_answers_idx" ON log (question, answers)
 CREATE TABLE IF NOT EXISTS rule
 (
     id      SERIAL NOT NULL,
-    domain  TEXT   NOT NULL,
     pattern TEXT   NOT NULL,
+    domain  TEXT   NOT NULL,
+    tld     TEXT   NOT NULL,
+    sld     TEXT   NOT NULL,
 
     CONSTRAINT rules_pk PRIMARY KEY (id)
 );

@@ -10,9 +10,11 @@ type Log struct {
     Client         string    `db:"client"`
     Question       string    `db:"question"`
     QuestionType   string    `db:"question_type"`
+    Action         string    `db:"action"`
     Answers        []string  `db:"answers"`
     ClientHostname string    `db:"client_hostname"`
     ClientMAC      string    `db:"client_mac"`
 
-    Stored time.Time `db:"-"`
+    QueryID  uint16        `db:"-"`
+    Duration time.Duration `db:"-"`
 }

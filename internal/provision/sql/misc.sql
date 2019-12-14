@@ -1,10 +1,6 @@
 SELECT count(*)
 FROM log;
 
-DROP TABLE log CASCADE;
-TRUNCATE TABLE log;
-ALTER SEQUENCE log_id_seq RESTART;
-
 ----- Remove trailing periods
 
 UPDATE log
@@ -147,3 +143,12 @@ FROM log
 WHERE client << cidr('10.2.5.0/24')
 ORDER BY id DESC
 LIMIT 500;
+
+-----
+
+SELECT client, question, count(question) AS c
+FROM log
+WHERE action = 'block'
+GROUP BY client, question
+HAVING count(question) > 3
+ORDER BY c DESC;

@@ -3,25 +3,30 @@ package db
 import (
     "time"
 
-    . "github.com/ajruckman/xlib"
     "github.com/jackc/pgx/pgtype"
+    "github.com/jmoiron/sqlx"
 
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
-func GetLeaseDetails() (res []schema.LeaseDetails) {
-    rows, err := XDB.Queryx(`SELECT time, op, mac, ip, coalesce(hostname, '') AS hostname, coalesce(vendor, '') AS vendor FROM lease_details;`)
-    Err(err)
+func GetLeaseDetails() (res []schema.LeaseDetails, err error) {
+    var rows *sqlx.Rows
+
+    rows, err = XDB.Queryx(`SELECT time, op, mac, ip, coalesce(hostname, '') AS hostname, coalesce(vendor, '') AS vendor FROM lease_details;`)
+    if err != nil {
+        return
+    }
 
     defer rows.Close()
 
     for rows.Next() {
         var n = internalLeaseDetails{}
         err = rows.StructScan(&n)
-        Err(err)
+        if err != nil {
+            return
+        }
 
         res = append(res, schema.LeaseDetails{
-            //ID:       n.ID,
             Time:     n.Time,
             Op:       n.Op,
             MAC:      n.MAC,
@@ -35,7 +40,6 @@ func GetLeaseDetails() (res []schema.LeaseDetails) {
 }
 
 type internalLeaseDetails struct {
-    //ID       uint64      `db:"id"`
     Time     time.Time   `db:"time"`
     Op       string      `db:"op"`
     MAC      string      `db:"mac"`
@@ -46,6 +50,10 @@ type internalLeaseDetails struct {
 
 func GetConfig() (res schema.Config, err error) {
     err = XDB.Get(&res, `SELECT * FROM config ORDER BY id DESC LIMIT 1`)
+    return
+}
 
+func GetRules() (res []schema.Rule, err error) {
+    err = XDB.Select(&res, `SELECT * FROM rule;`)
     return
 }

@@ -15,4 +15,4 @@ go env -w GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib"
 sed -i '/ContraCore/d' go.sum
 make || exit
 
-#./coredns -conf $GOPATH/src/github.com/ajruckman/ContraCore/Corefile
+./coredns -conf $GOPATH/src/github.com/ajruckman/ContraCore/Corefile

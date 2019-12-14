@@ -12,7 +12,6 @@ import (
 func main() {
     fmt.Println("Generating provision.go")
 
-
     if _, err := os.Stat("./provision.go"); err == nil {
         err = os.Remove("./provision.go")
         if err != nil {

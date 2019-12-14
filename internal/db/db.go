@@ -1,7 +1,5 @@
 package db
 
-//go:generate go run generate.go
-
 import (
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/stdlib"
@@ -17,8 +15,8 @@ var (
 
 func init() {
     conf := `postgres://contradbmgr:contradbmgr@10.3.0.16/contradb`
-
     var err error
+
     XDB, err = sqlx.Connect("pgx", conf)
     Err(err)
 
