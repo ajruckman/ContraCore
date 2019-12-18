@@ -10,7 +10,6 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/config"
-    "github.com/ajruckman/ContraCore/internal/db"
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
@@ -26,24 +25,16 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         ResponseWriter: w,
         r:              r,
 
-        qu:       r.Question[0],
-        domain:   rt(r.Question[0].Name),
-        client:   strings.Split(w.RemoteAddr().String(), ":")[0],
+        _qu:     r.Question[0],
+        _domain: rt(r.Question[0].Name),
+        _client: strings.Split(w.RemoteAddr().String(), ":")[0],
+
         received: time.Now(),
     }
 
-    //store := schema.Log{
-    //    Client:       ip,
-    //    Question:     nm,
-    //    QuestionType: dns.TypeToString[qu.Qtype],
-    //    Stored:       time.Now(),
-    //}
+    clog.Info(q._client, " -> ", r.Id, " ", dns.TypeToString[q._qu.Qtype])
 
-    //storedQueries.Store(r.Id, store)
-
-    clog.Info(q.client, " -> ", r.Id, " ", dns.TypeToString[q.qu.Qtype])
-
-    if strings.Count(q.domain, ".") == 0 {
+    if strings.Count(q._domain, ".") == 0 {
         if ret, rcode, err := respondWithDynamicDNS(&q); ret {
             return rcode, err
         }
@@ -53,11 +44,9 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         return rcode, err
     }
 
-    //clog.Infof("NM: %s | dn: %v", nm, config.Config.DomainNeeded)
-
-    if config.Config.DomainNeeded && strings.Count(q.domain, ".") == 0 {
+    if config.Config.DomainNeeded && strings.Count(q._domain, ".") == 0 {
+        clog.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
         q.action = "restrict"
-        clog.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q.domain)
         m := RespondWithCode(q.r, dns.RcodeServerFailure)
         err := q.Respond(m)
         return dns.RcodeServerFailure, err
@@ -71,13 +60,12 @@ type queryContext struct {
     dns.ResponseWriter
     r *dns.Msg
 
-    qu       dns.Question
-    domain   string
-    client   string
-    received time.Time
+    _qu     dns.Question
+    _domain string
+    _client string
 
-    action string
-    //answers []string
+    received time.Time
+    action   string
 }
 
 func (q *queryContext) Respond(res *dns.Msg) (err error) {
@@ -87,9 +75,9 @@ func (q *queryContext) Respond(res *dns.Msg) (err error) {
     }
 
     logChannel <- schema.Log{
-        Client:       q.client,
-        Question:     q.domain,
-        QuestionType: dns.TypeToString[q.qu.Qtype],
+        Client:       q._client,
+        Question:     q._domain,
+        QuestionType: dns.TypeToString[q._qu.Qtype],
         Action:       q.action,
         Answers:      answers,
 
@@ -104,70 +92,3 @@ func (q *queryContext) Respond(res *dns.Msg) (err error) {
 func (q queryContext) WriteMsg(r *dns.Msg) error {
     return q.Respond(r)
 }
-
-func init() {
-    go logWorker()
-    cacheDHCP()
-    cacheRules()
-}
-
-var logChannel = make(chan schema.Log)
-
-func logWorker() {
-    for v := range logChannel {
-        err := db.Log(v)
-        if err != nil {
-            clog.Warning("could not insert log for query '" + v.Question + "'")
-            clog.Warning(err.Error())
-        }
-
-        clog.Info(v.Client, " <- ", v.QueryID, " ", v.QuestionType, " ", v.Duration)
-    }
-}
-
-//var storedQueries sync.Map
-//
-//type ResponseInterceptor struct {
-//    dns.ResponseWriter
-//}
-//
-//func NewResponseInterceptor(w dns.ResponseWriter) *ResponseInterceptor {
-//    return &ResponseInterceptor{ResponseWriter: w}
-//}
-//
-//func (ri *ResponseInterceptor) WriteMsg(res *dns.Msg) error {
-//    var (
-//        loaded interface{}
-//        ok     bool
-//        stored schema.Log
-//    )
-//
-//    if loaded, ok = storedQueries.Load(res.Id); !ok {
-//        clog.Error("Unmatched query ID ", res.Id)
-//        storedQueries.Range(func(key interface{}, value interface{}) bool {
-//            clog.Debug("    ", key, " -> ", value)
-//
-//            return true
-//        })
-//        goto done
-//    }
-//
-//    stored = loaded.(schema.Log)
-//
-//    if time.Now().Sub(stored.Stored) > (time.Second * 3) {
-//        clog.Error("Stale query ID ", res.Id)
-//        storedQueries.Delete(res.Id)
-//        goto done
-//    }
-//
-//    clog.Info(stored.Client, " <- ", res.Id, " ", stored.QuestionType)
-//
-//    for _, v := range res.Answer {
-//        stored.Answers = append(stored.Answers, rrToString(v))
-//    }
-//
-//    logChannel <- stored
-//
-//done:
-//    return ri.ResponseWriter.WriteMsg(res)
-//}

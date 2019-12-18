@@ -1,3 +1,12 @@
+package provision
+
+import `fmt`
+import `context`
+import `github.com/ajruckman/ContraCore/internal/db`
+
+func init() {
+    fmt.Println(`Provisioning database`)
+    _, err := db.PDB.Exec(context.Background(), `
 ----- Log
 CREATE TABLE IF NOT EXISTS log
 (
@@ -69,7 +78,7 @@ WHERE (id, ip) IN (
     SELECT max(id), ip
     FROM lease
     GROUP BY ip)
-ORDER BY id DESC;
+ORDER BY id;
 
 ----- Recent log with details
 CREATE OR REPLACE VIEW log_details_recent AS
@@ -78,7 +87,6 @@ SELECT l.id,
     l.client,
     l.question,
     l.question_type,
-    l.action,
     l.answers,
     l.client_hostname,
     l.client_mac,
@@ -87,13 +95,6 @@ FROM log l
      LEFT OUTER JOIN oui o ON o.mac::TEXT LIKE (left(l.client_mac, 9) || '%')
 ORDER BY l.id DESC
 LIMIT 1000;
-
------ Log blocks by client, question, hostname, vendor, and count
-CREATE OR REPLACE VIEW log_block_details AS
-SELECT client, ld.hostname, ld.vendor, question, count(question) AS c
-FROM log
-     LEFT OUTER JOIN lease_details ld ON client = ld.ip
-WHERE action = 'block'
-GROUP BY client, question, ld.hostname, ld.vendor
-HAVING count(question) > 3
-ORDER BY c DESC;
+    `)
+    if err != nil { panic(err) }
+}

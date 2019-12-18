@@ -35,7 +35,7 @@ var (
     seen     sync.Map
 )
 
-// TODO: Check domains from URLs against manual blacklist domains. For example,
+// TODO: check domains from URLs against manual blacklist domains. For example,
 // if a rule like '^0as.*\.win' exists and there are domains in a list like
 // '0as24865347578835677.win', skip those domains.
 

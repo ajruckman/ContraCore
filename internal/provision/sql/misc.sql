@@ -103,26 +103,6 @@ REFRESH MATERIALIZED VIEW reverse_mat;
 
 -----
 
-
------
-
-CREATE OR REPLACE VIEW log_details_recent AS
-SELECT l.id,
-    l.time,
-    l.client,
-    l.question,
-    l.question_type,
-    l.answers,
-    l.client_hostname,
-    l.client_mac,
-    o.vendor AS client_vendor
-FROM log l
-     LEFT OUTER JOIN oui o ON trunc(o.mac)::TEXT LIKE (left(l.client_mac, 9) || '%')
-ORDER BY l.id DESC
-LIMIT 500;
-
------
-
 SELECT l.question, count(l.question) AS count
 FROM LOG l
 WHERE l.question LIKE '%roku%'
@@ -144,11 +124,14 @@ WHERE client << cidr('10.2.5.0/24')
 ORDER BY id DESC
 LIMIT 500;
 
+SELECT *
+FROM rule
+WHERE 'moatpixel.com' ~ pattern;
+
 -----
 
-SELECT client, question, count(question) AS c
-FROM log
-WHERE action = 'block'
-GROUP BY client, question
-HAVING count(question) > 3
+SELECT l.ip, l.hostname, l.vendor, count(d.question) AS c
+FROM lease_details l
+     RIGHT OUTER JOIN log d ON l.ip = d.client
+GROUP BY l.ip, l.hostname, l.vendor
 ORDER BY c DESC;

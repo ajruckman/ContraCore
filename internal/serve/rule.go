@@ -12,16 +12,16 @@ import (
     "github.com/ajruckman/ContraCore/internal/rulegen"
 )
 
-type RuleTree struct {
+type ruleTree struct {
     Tree map[string]map[string][]*regexp.Regexp
     lock sync.Mutex
 }
 
 var (
-    ruleCache = RuleTree{}
+    ruleCache = ruleTree{}
 )
 
-func (r *RuleTree) Check(domain string) bool {
+func (r *ruleTree) check(domain string) bool {
     path := rulegen.GenPath(domain)
 
     if strings.Count(domain, ".") == 0 {
@@ -67,6 +67,4 @@ func cacheRules() {
     }
 
     ruleCache.lock.Unlock()
-
-    fmt.Println(ruleCache.Tree["com"]["google"])
 }

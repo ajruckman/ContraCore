@@ -80,7 +80,6 @@ var (
 
 func bench() {
     checks := 10
-    //for _, url := range urls {
 
     var totMilliseconds int64
 
@@ -100,11 +99,9 @@ func bench() {
     }
 
     fmt.Println(float64(totMilliseconds)/float64(checks), urls)
-    //}
 }
 
 func load() {
-
     // Generate rules
     begin := time.Now()
     rules, distinct := rulegen.GenFromURLs(ticked)
@@ -124,57 +121,5 @@ func load() {
 }
 
 func main() {
-    //bench()
     load()
-    //began := time.Now()
-    //res, _ := rulegen.ProcessFromURLs(urls)
-    //fmt.Println(len(res), time.Since(began))
-
-    //var b testing.BenchmarkResult
-    //checks := 5
-    //
-    //for c := 0; c < checks; c++ {
-    //    var total int64
-    //
-    //    b = testing.Benchmark(benchmarkProcessFromURLsWithPointers)
-    //    total += b.T.Milliseconds()
-    //
-    //    fmt.Println(total/1, "ms per benchmark with", checks, "checks", b.MemString())
-    //}
-
-    //minP := 4
-    //maxP := 4
-    //minC := 10000
-    //maxC := 10000
-    //
-    ////fmt.Printf("%-10v", "")
-    //for c := minC; c < maxC; c += 1000 {
-    //   fmt.Print(fmt.Sprintf("%-10d", c))
-    //}
-    ////fmt.Println()
-    //
-    //for p := minP; p <= maxP; p++ {
-    //   rulegen.MaxPar = p
-    //
-    //   //fmt.Printf("%-10d", p)
-    //
-    //   for c := minC; c <= maxC; c += 1000 {
-    //       rulegen.ChunkSize = c
-    //
-    //       var total int64
-    //       for check := int64(0); check <= checks+1; check++ {
-    //           b = testing.Benchmark(benchmarkProcessFromURLsWithPointers)
-    //           if check != 0 {
-    //               total += b.T.Milliseconds()
-    //           }
-    //
-    //       }
-    //
-    //       fmt.Println(total/checks, "ms per benchmark with", checks, "checks")
-    //
-    //       //fmt.Printf("%-10d", total/checks)
-    //   }
-    //
-    //   //fmt.Println()
-    //}
 }
