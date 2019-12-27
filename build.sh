@@ -13,6 +13,7 @@ cd $GOPATH/src/github.com/coredns/coredns/ || exit
 
 go env -w GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib"
 sed -i '/ContraCore/d' go.sum
-make || exit
+GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib" make || exit
 
 ./coredns -conf $GOPATH/src/github.com/ajruckman/ContraCore/Corefile
+

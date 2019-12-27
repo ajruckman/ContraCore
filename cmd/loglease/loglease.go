@@ -22,7 +22,26 @@ func main() {
 }
 
 func logNewEntry(op, mac, ip, hostname string) {
-    _, err := db.XDB.Exec(`INSERT INTO lease (op, mac, ip, hostname) VALUES ($1, $2, $3, nullif($4, ''))`, op, mac, ip, hostname)
+    //_, err := db.XDB.Exec(`INSERT INTO lease (source, op, mac, ip, hostname) VALUES ($1, $2, $3, $4, nullif($5, ''))`, "dnsmasq", op, mac, ip, hostname)
+    //Err(err)
+
+    _, err := db.XDB.Exec(`
+
+INSERT INTO lease (source, op, mac, ip, hostname, vendor)
+SELECT values.*, o.vendor
+FROM (
+     SELECT $1             AS source,
+            $2             AS op,
+            $3             AS mac,
+            $4::INET       AS ip,
+            NULLIF($5, '') AS hostname
+) values
+LEFT OUTER JOIN oui o ON left(o.mac::TEXT, 9) = left($3, 9)
+GROUP BY values.source, values.op, values.mac, values.ip, values.hostname, o.vendor;
+
+`,
+        "dnsmasq", op, mac, ip, hostname)
+
     Err(err)
 }
 

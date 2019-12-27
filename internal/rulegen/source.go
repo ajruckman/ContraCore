@@ -17,7 +17,7 @@ import (
 )
 
 var (
-    MaxPar    = 4
+    MaxPar    = 1
     ChunkSize = 10000
     SaveSize  = 10000
 )
@@ -81,7 +81,7 @@ func GenFromURLs(urls []string) ([]string, int) {
 
         linesInBP <- batch
 
-        fmt.Println("done", l)
+        fmt.Println("done, read", l, "lines")
     }
 
     close(linesInBP)
@@ -91,6 +91,8 @@ func GenFromURLs(urls []string) ([]string, int) {
 
     return res, int(distinct.Load())
 }
+
+const naiveMode = true
 
 func SaveRules(res []string) {
     rulesIn = make(chan [][]interface{})
@@ -107,12 +109,37 @@ func SaveRules(res []string) {
     for _, rule := range res {
         p := GenPath(rule)
 
-        batch = append(batch, []interface{}{
-            GenRegex(rule),
-            rule,
-            p[0],
-            p[1], // Should be safe is #B works.
-        })
+        if naiveMode {
+            d := strings.Count(rule, ".")
+            if d > 2 {
+                d = 2
+            }
+
+            tld := p[0]
+            var sld *string = nil
+
+            if d == 2 {
+                sld = &p[1]
+            }
+
+            batch = append(batch, []interface{}{
+                GenRegex(rule),
+                rule,
+                d,
+                tld,
+                sld, // Should be safe is #B works.
+            })
+        } else {
+            // This program wil always generate class-2 rules because it omits domains without periods.
+            // This means that the value of 'class' is always 2 and 'p[1]' is always safe (#B).
+            batch = append(batch, []interface{}{
+                GenRegex(rule),
+                rule,
+                2,
+                p[0],
+                p[1],
+            })
+        }
 
         if c >= SaveSize {
             rulesIn <- batch
@@ -131,7 +158,7 @@ func SaveRules(res []string) {
 
 func dbSaveWorker() {
     for set := range rulesIn {
-        _, err := db.PDB.CopyFrom(context.Background(), pgx.Identifier{"rule"}, []string{"pattern", "domain", "tld", "sld"}, pgx.CopyFromRows(set))
+        _, err := db.PDB.CopyFrom(context.Background(), pgx.Identifier{"rule"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
         Err(err)
     }
 

@@ -10,23 +10,43 @@ CREATE TABLE IF NOT EXISTS log
     answers         TEXT[],
     client_hostname TEXT,
     client_mac      TEXT,
+    client_vendor   TEXT,
 
     CONSTRAINT log_pk PRIMARY KEY (id),
-    CONSTRAINT log_action_chk CHECK (action IN ('answer', 'restrict', 'block', 'pass'))
+    CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
 );
 
-CREATE INDEX IF NOT EXISTS "log_question_answers_idx" ON log (question, answers);
+BEGIN TRANSACTION;
+ALTER TABLE log
+    DROP CONSTRAINT log_action_chk;
+UPDATE log
+SET action = 'ddns-hostname'
+WHERE action = 'answer';
+ALTER TABLE log
+    ADD CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'));
+END TRANSACTION;
 
 ----- Rule
 CREATE TABLE IF NOT EXISTS rule
 (
     id      SERIAL NOT NULL,
     pattern TEXT   NOT NULL,
-    domain  TEXT   NOT NULL,
-    tld     TEXT   NOT NULL,
-    sld     TEXT   NOT NULL,
+    class   INT    NOT NULL,
+    domain  TEXT,
+    tld     TEXT,
+    sld     TEXT,
 
-    CONSTRAINT rules_pk PRIMARY KEY (id)
+    CONSTRAINT rule_pk PRIMARY KEY (id),
+    CONSTRAINT rule_class_chk CHECK (0 <= class AND class <= 3),
+
+    CONSTRAINT rule_nonnull_chk CHECK
+        (
+            (class = 0 AND domain IS NULL AND tld IS NULL AND sld IS NULL)
+            OR
+            (class = 1 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NULL)
+            OR
+            (class = 2 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NOT NULL)
+        )
 );
 
 ----- Lease
@@ -34,10 +54,12 @@ CREATE TABLE IF NOT EXISTS lease
 (
     id       BIGSERIAL NOT NULL,
     time     TIMESTAMP NOT NULL DEFAULT now(),
-    op       CHAR(3) CHECK (op IN ('add', 'old', 'del')),
+    source   TEXT      NOT NULL,
+    op       CHAR(3)   NOT NULL CHECK (op IN ('add', 'old', 'del')),
     mac      TEXT,
     ip       INET,
     hostname TEXT,
+    vendor   TEXT,
 
     CONSTRAINT lease_pk PRIMARY KEY (id)
 );
@@ -62,38 +84,34 @@ CREATE TABLE IF NOT EXISTS config
 
 ----- Lease details
 CREATE OR REPLACE VIEW lease_details AS
-SELECT lease.time, lease.op, lease.mac, lease.ip, lease.hostname, o.vendor
+SELECT lease.time, lease.op, lease.mac, lease.ip, lease.hostname, lease.vendor
 FROM lease
-     LEFT OUTER JOIN oui o ON o.mac::TEXT ILIKE (left(lease.mac, 9) || '%')
 WHERE (id, ip) IN (
     SELECT max(id), ip
     FROM lease
     GROUP BY ip)
 ORDER BY id DESC;
 
------ Recent log with details
 CREATE OR REPLACE VIEW log_details_recent AS
 SELECT l.id,
-    l.time,
-    l.client,
-    l.question,
-    l.question_type,
-    l.action,
-    l.answers,
-    l.client_hostname,
-    l.client_mac,
-    o.vendor AS client_vendor
+       l.time,
+       l.client,
+       l.question,
+       l.question_type,
+       l.action,
+       l.answers,
+       l.client_hostname,
+       l.client_mac,
+       l.client_vendor
 FROM log l
-     LEFT OUTER JOIN oui o ON o.mac::TEXT LIKE (left(l.client_mac, 9) || '%')
 ORDER BY l.id DESC
 LIMIT 1000;
 
 ----- Log blocks by client, question, hostname, vendor, and count
 CREATE OR REPLACE VIEW log_block_details AS
-SELECT client, ld.hostname, ld.vendor, question, count(question) AS c
+SELECT client, client_hostname AS hostname, client_vendor AS vendor, question, count(question) AS c
 FROM log
-     LEFT OUTER JOIN lease_details ld ON client = ld.ip
 WHERE action = 'block'
-GROUP BY client, question, ld.hostname, ld.vendor
+GROUP BY client, question, client_hostname, client_vendor
 HAVING count(question) > 3
 ORDER BY c DESC;

@@ -12,7 +12,7 @@ import (
 func GetLeaseDetails() (res []schema.LeaseDetails, err error) {
     var rows *sqlx.Rows
 
-    rows, err = XDB.Queryx(`SELECT time, op, mac, ip, coalesce(hostname, '') AS hostname, coalesce(vendor, '') AS vendor FROM lease_details;`)
+    rows, err = XDB.Queryx(`SELECT time, op, COALESCE(mac, '') AS mac, ip, COALESCE(hostname, '') AS hostname, COALESCE(vendor, '') AS vendor FROM lease_details;`)
     if err != nil {
         return
     }
@@ -54,6 +54,6 @@ func GetConfig() (res schema.Config, err error) {
 }
 
 func GetRules() (res []schema.Rule, err error) {
-    err = XDB.Select(&res, `SELECT * FROM rule;`)
+    err = XDB.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
     return
 }

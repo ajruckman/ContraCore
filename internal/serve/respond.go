@@ -7,8 +7,7 @@ import (
     "github.com/miekg/dns"
 )
 
-//func GenResponse(w dns.ResponseWriter, r *dns.Msg, qtype uint16, value string) *dns.Msg {
-func GenResponse(r *dns.Msg, qtype uint16, value string) *dns.Msg {
+func genResponse(r *dns.Msg, qtype uint16, value string) *dns.Msg {
     m := new(dns.Msg)
     m.SetReply(r)
     m.Authoritative = true
@@ -46,6 +45,15 @@ func GenResponse(r *dns.Msg, qtype uint16, value string) *dns.Msg {
             },
             Target: dns.Fqdn(value),
         }
+    case dns.TypePTR:
+        rr = &dns.PTR{
+            Hdr: dns.RR_Header{
+                Name: state.QName(),
+                Rrtype: dns.TypePTR,
+                Class: state.QClass(),
+            },
+            Ptr: dns.Fqdn(value),
+        }
     default:
         rr = &dns.ANY{
             Hdr: dns.RR_Header{
@@ -60,8 +68,7 @@ func GenResponse(r *dns.Msg, qtype uint16, value string) *dns.Msg {
     return m
 }
 
-//func RespondWithCode(w dns.ResponseWriter, r *dns.Msg, code int) error {
-func RespondWithCode(r *dns.Msg, code int) *dns.Msg {
+func responseWithCode(r *dns.Msg, code int) *dns.Msg {
     m := new(dns.Msg)
     m.SetReply(r)
     m.Authoritative = true

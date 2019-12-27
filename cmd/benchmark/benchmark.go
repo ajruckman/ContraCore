@@ -61,7 +61,7 @@ func init() {
 func main() {
 
     began := time.Now()
-    res, totalValid := rulegen.ProcessDomainSources(rulegen.BlockV4, contents)
+    res, totalValid := rulegen.GenFromURLs(urls)
 
     fmt.Println()
     fmt.Println("Time: ", time.Since(began))
@@ -144,7 +144,7 @@ func benchmarkRuleGen(evaluator func(*rulegen.Node, string, []string), b *testin
 
     //for n := 0; n < b.N; n++ {
     for n := 0; n < numBench; n++ {
-        res, _ := rulegen.ProcessDomainSources(evaluator, contents)
+        res, _ := rulegen.GenFromURLs(urls)
         if len(res) != expect {
             fmt.Println(len(res), name)
 

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+service Query {
+    rpc Alert (QueryNotification) returns (QueryNotificationResponse) {
+    }
+}
+
+message QueryNotification {
+    google.protobuf.Timestamp Time = 1;
+}
+
+message QueryNotificationResponse {
+    uint32 Status = 1;
+}

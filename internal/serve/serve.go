@@ -32,12 +32,20 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         received: time.Now(),
     }
 
-    clog.Info(q._client, " -> ", r.Id, " ", dns.TypeToString[q._qu.Qtype])
+    if q._domain == "!runprobe" {
+        return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, dns.RcodeSuccess))
+    }
+
+    clog.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._qu.Qtype])
 
     if strings.Count(q._domain, ".") == 0 {
-        if ret, rcode, err := respondWithDynamicDNS(&q); ret {
+        if ret, rcode, err := respondByHostname(&q); ret {
             return rcode, err
         }
+    }
+
+    if ret, rcode, err := respondByPTR(&q); ret {
+        return rcode, err
     }
 
     if ret, rcode, err := respondWithBlock(&q); ret {
@@ -45,12 +53,18 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
     }
 
     if config.Config.DomainNeeded && strings.Count(q._domain, ".") == 0 {
+        if q._qu.Qtype == dns.TypeNS && q._domain == "" {
+            // Permit looking up root servers
+            goto next
+        }
+
         clog.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
         q.action = "restrict"
-        m := RespondWithCode(q.r, dns.RcodeServerFailure)
+        m := responseWithCode(q.r, dns.RcodeServerFailure)
         err := q.Respond(m)
         return dns.RcodeServerFailure, err
     }
+next:
 
     q.action = "pass"
     return plugin.NextOrFailure(name, next, ctx, q, r)

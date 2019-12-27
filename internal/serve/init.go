@@ -2,6 +2,10 @@ package serve
 
 func init() {
     go logWorker()
+    go logMonitor()
+
     cacheDHCP()
-    cacheRules()
+    go dhcpRefreshWorker()
+
+    readRules()
 }
