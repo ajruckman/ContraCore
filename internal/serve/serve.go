@@ -36,6 +36,13 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, dns.RcodeSuccess))
     }
 
+    // These will be needed when we implement whitelisting anyway, so I don't mind looking them up for all requests
+    lease, found := getLeaseByIP(q._client)
+    if found {
+        q.mac = lease.MAC
+        q.hostname = lease.Hostname
+    }
+
     clog.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._qu.Qtype])
 
     if strings.Count(q._domain, ".") == 0 {
@@ -80,6 +87,9 @@ type queryContext struct {
 
     received time.Time
     action   string
+
+    mac      string
+    hostname string
 }
 
 func (q *queryContext) Respond(res *dns.Msg) (err error) {

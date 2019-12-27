@@ -1,7 +1,6 @@
 package serve
 
 import (
-    "fmt"
     "regexp"
     "strings"
     "sync"
@@ -124,7 +123,6 @@ func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
 
     if strings.HasSuffix(q._domain, ".in-addr.arpa") && matchReverse.MatchString(q._domain) {
         bits := getReverse.FindStringSubmatch(q._domain)
-        fmt.Println(bits)
 
         ip := bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1]
 

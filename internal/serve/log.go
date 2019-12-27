@@ -27,7 +27,7 @@ var (
 
 func logWorker() {
     for v := range logChannel {
-        err := db.Log(v)
+        err := db.LogC(v)
         if err != nil {
             clog.Warningf("could not insert log for query '%s'", v.Question)
             clog.Warning(err.Error())
@@ -52,8 +52,8 @@ func logMonitor() {
         c := logCount.Swap(0)
 
         var (
-            avgDurAns    = float64(logAnsweredTotDuration.Swap(0).Milliseconds()) / float64(logAnsweredTotCount.Swap(0))
-            avgDurPassed = float64(logPassedTotDuration.Swap(0).Milliseconds()) / float64(logPassedTotCount.Swap(0))
+            avgDurAns  = float64(logAnsweredTotDuration.Swap(0).Milliseconds()) / float64(logAnsweredTotCount.Swap(0))
+            avgDurPass = float64(logPassedTotDuration.Swap(0).Milliseconds()) / float64(logPassedTotCount.Swap(0))
         )
 
         clog.Infof("Log channel backlog: %d | New log rows: %d | Rows/second: %.3f | Avg. ms answered reqs.: %.2f | Avg. ms passed reqs.: %.2f",
@@ -61,7 +61,7 @@ func logMonitor() {
             c,
             float64(c)/float64(logMonInterval),
             avgDurAns,
-            avgDurPassed,
+            avgDurPass,
         )
     }
 }

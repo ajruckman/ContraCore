@@ -26,3 +26,25 @@ GROUP BY values.client, values.question, values.question_type, values.action, va
 
     return err
 }
+
+func LogC(log schema.Log) error {
+    _, err := CDB.Exec(`
+
+INSERT INTO contralog.log(client, question, question_type, action, answers, client_hostname, client_mac, client_vendor)
+SELECT values.*, oui.vendor
+    FROM (
+        SELECT ? AS client,
+               ? AS question,
+               ? AS question_type,
+               ? AS action,
+               ? AS answers,
+               ? AS client_hostname,
+               ? AS client_mac
+    ) AS values
+LEFT JOIN oui ON startsWith(oui.mac, ?);
+
+`,
+        log.Client, log.Question, log.QuestionType, log.Action, log.Answers, log.ClientHostname, log.ClientMAC, log.ClientMAC)
+
+    return err
+}

@@ -22,9 +22,6 @@ func main() {
 }
 
 func logNewEntry(op, mac, ip, hostname string) {
-    //_, err := db.XDB.Exec(`INSERT INTO lease (source, op, mac, ip, hostname) VALUES ($1, $2, $3, $4, nullif($5, ''))`, "dnsmasq", op, mac, ip, hostname)
-    //Err(err)
-
     _, err := db.XDB.Exec(`
 
 INSERT INTO lease (source, op, mac, ip, hostname, vendor)

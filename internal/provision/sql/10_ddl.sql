@@ -16,16 +16,6 @@ CREATE TABLE IF NOT EXISTS log
     CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
 );
 
-BEGIN TRANSACTION;
-ALTER TABLE log
-    DROP CONSTRAINT log_action_chk;
-UPDATE log
-SET action = 'ddns-hostname'
-WHERE action = 'answer';
-ALTER TABLE log
-    ADD CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'));
-END TRANSACTION;
-
 ----- Rule
 CREATE TABLE IF NOT EXISTS rule
 (
@@ -56,8 +46,8 @@ CREATE TABLE IF NOT EXISTS lease
     time     TIMESTAMP NOT NULL DEFAULT now(),
     source   TEXT      NOT NULL,
     op       CHAR(3)   NOT NULL CHECK (op IN ('add', 'old', 'del')),
-    mac      TEXT,
-    ip       INET,
+    mac      TEXT      NOT NULL,
+    ip       INET      NOT NULL,
     hostname TEXT,
     vendor   TEXT,
 
