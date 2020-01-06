@@ -109,10 +109,14 @@ func (r *ruleTree) check(domain string) bool {
         tld := path[0]
         sld := path[1]
 
+        began := time.Now()
         for _, rule := range r.class2Rules[tld][sld] {
             if rule.MatchString(domain) {
                 return true
             }
+        }
+        if logDurations {
+            clog.Debugf("%v: 2 > %v", domain, time.Since(began))
         }
 
         fallthrough
@@ -120,21 +124,28 @@ func (r *ruleTree) check(domain string) bool {
     case 1:
         tld := path[0]
 
+        began := time.Now()
         for _, rule := range r.class1Rules[tld] {
             if rule.MatchString(domain) {
                 return true
             }
         }
+        if logDurations {
+            clog.Debugf("%v: 1 > %v", domain, time.Since(began))
+        }
 
         fallthrough
 
     case 0:
+        began := time.Now()
         for _, rule := range r.class0Rules {
             if rule.MatchString(domain) {
                 return true
             }
         }
-
+        if logDurations {
+            clog.Debugf("%v: 0 > %v", domain, time.Since(began))
+        }
     }
 
     return false

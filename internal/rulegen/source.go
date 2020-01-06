@@ -92,7 +92,7 @@ func GenFromURLs(urls []string) ([]string, int) {
     return res, int(distinct.Load())
 }
 
-const naiveMode = true
+const naiveMode = false
 
 func SaveRules(res []string) {
     rulesIn = make(chan [][]interface{})

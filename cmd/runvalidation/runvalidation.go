@@ -8,7 +8,7 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/db"
-    "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/schema/contradb"
 )
 
 /*
@@ -20,7 +20,7 @@ Classes 0-2: 713500   / 938306   | Average request time (ms): 0.449        | div
 func main() {
     c := new(dns.Client)
 
-    var rules []schema.Rule
+    var rules []contradb.Rule
     err := db.XDB.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule`)
     Err(err)
 

@@ -24,20 +24,20 @@ func main() {
 func logNewEntry(op, mac, ip, hostname string) {
     _, err := db.XDB.Exec(`
 
-INSERT INTO lease (source, op, mac, ip, hostname, vendor)
+INSERT INTO lease (source, op, ip, mac, hostname, vendor)
 SELECT values.*, o.vendor
 FROM (
      SELECT $1             AS source,
             $2             AS op,
-            $3             AS mac,
-            $4::INET       AS ip,
+            $3::INET       AS ip,
+            $4::MACADDR    AS mac,
             NULLIF($5, '') AS hostname
 ) values
-LEFT OUTER JOIN oui o ON left(o.mac::TEXT, 9) = left($3, 9)
-GROUP BY values.source, values.op, values.mac, values.ip, values.hostname, o.vendor;
+LEFT OUTER JOIN oui o ON o.mac = left($4::TEXT, 8)
+GROUP BY values.source, values.op, values.ip, values.mac, values.hostname, o.vendor;
 
 `,
-        "dnsmasq", op, mac, ip, hostname)
+        "dnsmasq", op, ip, mac, hostname)
 
     Err(err)
 }

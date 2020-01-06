@@ -7,10 +7,10 @@ import (
     . "github.com/ajruckman/xlib"
 
     "github.com/ajruckman/ContraCore/internal/db"
-    "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/schema/contradb"
 )
 
-var Config schema.Config
+var Config contradb.Config
 
 func init() {
     var err error

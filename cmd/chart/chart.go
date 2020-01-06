@@ -12,7 +12,7 @@ import (
     "gonum.org/v1/plot/vg"
 
     "github.com/ajruckman/ContraCore/internal/db"
-    "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/schema/contralog"
 )
 
 func main() {
@@ -23,7 +23,7 @@ func main() {
 }
 
 func series(w http.ResponseWriter, r *http.Request) {
-    var res []schema.QuestionCountsPerHour
+    var res []contralog.QuestionCountsPerHour
     err := db.XDB.Select(&res, `
 
 SELECT ts_round(time, 3600)

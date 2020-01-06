@@ -3,6 +3,7 @@ package serve
 import (
     "context"
     "errors"
+    "net"
     "strings"
     "time"
 
@@ -10,7 +11,6 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/config"
-    "github.com/ajruckman/ContraCore/internal/schema"
 )
 
 func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
@@ -36,28 +36,50 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, dns.RcodeSuccess))
     }
 
+    var began time.Time
+
     // These will be needed when we implement whitelisting anyway, so I don't mind looking them up for all requests
+    began = time.Now()
     lease, found := getLeaseByIP(q._client)
     if found {
-        q.mac = lease.MAC
+        q.mac = &lease.MAC
         q.hostname = lease.Hostname
+        q.vendor = lease.Vendor
+
+        //vendor, ok := ouiMACPrefixToVendor.Load(trimmedMAC)
+        //if ok {
+        //    s := vendor.(string)
+        //    q.vendor = &s
+        //}
     }
+    q.durations.timeLookupLease = time.Since(began)
 
     clog.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._qu.Qtype])
 
+    began = time.Now()
     if strings.Count(q._domain, ".") == 0 {
         if ret, rcode, err := respondByHostname(&q); ret {
             return rcode, err
         }
     }
+    q.durations.timeCheckRespondByHostname = time.Since(began)
 
+    began = time.Now()
     if ret, rcode, err := respondByPTR(&q); ret {
         return rcode, err
     }
+    q.durations.timeCheckRespondByPTR = time.Since(began)
 
+    if q.hostname != nil && strings.ToLower(*q.hostname) == "syd-laptop" {
+        clog.Infof("This is Syd's laptop; skipping respondWithBlock")
+        goto skip
+    }
+    began = time.Now()
     if ret, rcode, err := respondWithBlock(&q); ret {
         return rcode, err
     }
+    q.durations.timeCheckRespondWithBlock = time.Since(began)
+skip:
 
     if config.Config.DomainNeeded && strings.Count(q._domain, ".") == 0 {
         if q._qu.Qtype == dns.TypeNS && q._domain == "" {
@@ -88,8 +110,24 @@ type queryContext struct {
     received time.Time
     action   string
 
-    mac      string
-    hostname string
+    mac      *net.HardwareAddr
+    hostname *string
+    vendor   *string
+
+    answers []string
+
+    durations durations
+}
+
+type durations struct {
+    timeLookupLease            time.Duration
+    timeCheckRespondByHostname time.Duration
+    timeCheckRespondByPTR      time.Duration
+    timeCheckRespondWithBlock  time.Duration
+    timeGenLogStruct           time.Duration
+    timeSaveLogToPG            time.Duration
+    timeSaveLogToCH            time.Duration
+    timeSendLogToEventClients  time.Duration
 }
 
 func (q *queryContext) Respond(res *dns.Msg) (err error) {
@@ -97,17 +135,9 @@ func (q *queryContext) Respond(res *dns.Msg) (err error) {
     for _, v := range res.Answer {
         answers = append(answers, rrToString(v))
     }
+    q.answers = answers
 
-    logChannel <- schema.Log{
-        Client:       q._client,
-        Question:     q._domain,
-        QuestionType: dns.TypeToString[q._qu.Qtype],
-        Action:       q.action,
-        Answers:      answers,
-
-        QueryID:  q.r.Id,
-        Duration: time.Now().Sub(q.received),
-    }
+    logChannel <- *q
 
     err = q.ResponseWriter.WriteMsg(res)
     return

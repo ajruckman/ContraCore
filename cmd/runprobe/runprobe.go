@@ -14,12 +14,12 @@ func main() {
     m := new(dns.Msg)
     m.SetQuestion(dns.Fqdn("!runprobe"), dns.TypeA)
 
-    t := time.NewTicker(time.Second * 1)
+    t := time.NewTicker(time.Second * 5)
 
     for range t.C {
         fmt.Println("TICK")
 
-        r, _, err := c.Exchange(m, "127.0.0.1:5300")
+        r, _, err := c.Exchange(m, "10.3.0.16:53")
 
         if err == nil && r.Rcode == dns.RcodeSuccess {
             if !lastUp {

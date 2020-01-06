@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+
+    <script src="https://www.amcharts.com/lib/4/core.js"></script>
+    <script src="https://www.amcharts.com/lib/4/charts.js"></script>
+
+    <style>
+        #chartdiv {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+<script>
+    let data;
+
+    fetch("http://localhost:8080/hourly")
+        .then(res => res.json())
+        .then((out) => {
+            data = out;
+
+            am4core.ready(function () {
+                const chart = am4core.create("chartdiv", am4charts.XYChart);
+                chart.paddingRight = 20;
+
+                chart.data = data;
+                chart.dateFormatter.inputDateFormat = "yyyy-MM-dd HH:mm";
+
+                const dateAxis = chart.xAxes.push(new am4charts.DateAxis());
+
+                dateAxis.dateFormats.setKey('hour', 'yyyy-MM-dd HH:mm');
+                dateAxis.periodChangeDateFormats.setKey('hour', 'yyyy-MM-dd HH:mm');
+                // dateAxis.dataFields.category = 'date'; // x axis data
+                dateAxis.tooltipDateFormat = "yyyy-MM-dd, HH:mm";
+
+                const valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
+                valueAxis.tooltip.disabled = true;
+                valueAxis.title.text = "Total # DNS queries";
+
+                const series = chart.series.push(new am4charts.LineSeries());
+                series.dataFields.dateX = "aggHour";
+                series.dataFields.valueY = "queryCount";
+                series.tooltipText = "Count: [bold]{valueY}[/]";
+                series.fillOpacity = 0.3;
+
+                chart.cursor = new am4charts.XYCursor();
+                chart.cursor.lineY.opacity = 0;
+                chart.scrollbarX = new am4charts.XYChartScrollbar();
+                chart.scrollbarX.series.push(series);
+
+                dateAxis.keepSelection = true;
+
+                console.log(chart);
+            });
+        });
+</script>
+
+
+<div id="chartdiv"></div>
+</body>
+</html>

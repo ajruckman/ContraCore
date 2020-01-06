@@ -9,42 +9,43 @@ import (
 func Log(log schema.Log) error {
     _, err := PDB.Exec(context.Background(), `
 
-INSERT
-INTO log (client, question, question_type, action, answers, client_hostname, client_mac, client_vendor)
-SELECT values.*, l.hostname, l.mac, l.vendor
-FROM (
-    SELECT $1::INET    AS client,
-           $2          AS question,
-           $3          AS question_type,
-           $4          AS action,
-           $5::TEXT[]  AS answers
-) values
-     LEFT OUTER JOIN lease_details l ON l.ip = values.client
-GROUP BY values.client, values.question, values.question_type, values.action, values.answers, l.hostname, l.mac, l.vendor;
+INSERT INTO log (client, question, question_type, action, answers, client_mac, client_hostname, client_vendor) 
+VALUES ($1::INET, $2, $3, $4, $5::TEXT[], $6, $7, $8);
 
-`, log.Client, log.Question, log.QuestionType, log.Action, log.Answers)
+`, log.Client, log.Question, log.QuestionType, log.Action, log.Answers, log.ClientMAC, log.ClientHostname, log.ClientVendor)
 
     return err
 }
 
 func LogC(log schema.Log) error {
-    _, err := CDB.Exec(`
+    return nil
 
-INSERT INTO contralog.log(client, question, question_type, action, answers, client_hostname, client_mac, client_vendor)
-SELECT values.*, oui.vendor
-    FROM (
-        SELECT ? AS client,
-               ? AS question,
-               ? AS question_type,
-               ? AS action,
-               ? AS answers,
-               ? AS client_hostname,
-               ? AS client_mac
-    ) AS values
-LEFT JOIN oui ON startsWith(oui.mac, ?);
+    tx, err := CDB.Begin()
+    if err != nil {
+        return err
+    }
 
-`,
-        log.Client, log.Question, log.QuestionType, log.Action, log.Answers, log.ClientHostname, log.ClientMAC, log.ClientMAC)
+    stmt, err := tx.Prepare(`
 
+INSERT INTO contralog.log(client, question, question_type, action, answers, client_mac, client_hostname, client_vendor)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+
+`)
+    if err != nil {
+        return err
+    }
+
+    var mac *string
+    if log.ClientMAC != nil {
+        r := log.ClientMAC.String()
+        mac = &r
+    }
+
+    _, err = stmt.Exec(log.Client, log.Question, log.QuestionType, log.Action, log.Answers, mac, log.ClientHostname, log.ClientVendor)
+    if err != nil {
+        return err
+    }
+
+    err = tx.Commit()
     return err
 }

@@ -27,9 +27,9 @@ func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
             v = "-"
         }
 
-        m = genResponse(q.r, q._qu.Qtype, v)
-
         clog.Infof("Blocking query '%s' with value '%s'", q._domain, v)
+
+        m = genResponse(q.r, q._qu.Qtype, v)
         err = q.Respond(m)
 
         return true, dns.RcodeSuccess, err

@@ -2,11 +2,14 @@ package ouigen
 
 import (
     "bufio"
+    "context"
+    "fmt"
     "net/http"
     "regexp"
     "strings"
 
     . "github.com/ajruckman/xlib"
+    "github.com/jackc/pgx/v4"
 
     "github.com/ajruckman/ContraCore/internal/db"
 )
@@ -14,13 +17,10 @@ import (
 var matchOUI = regexp.MustCompile(`^([A-z0-9]{2}-[A-z0-9]{2}-[A-z0-9]{2})\s+\(hex\)\s+(.*)$`)
 
 func GenOUI() {
-    _, err := db.CDB.Exec(`TRUNCATE TABLE contralog.oui;`)
+    _, err := db.XDB.Exec(`TRUNCATE TABLE oui;`)
     Err(err)
 
-    tx, err := db.CDB.Begin()
-    Err(err)
-    stmt, err := tx.Prepare(`INSERT INTO contralog.oui (mac, vendor) VALUES (?, ?);`)
-    Err(err)
+    var res [][]interface{}
 
     resp, err := http.Get(`https://linuxnet.ca/ieee/oui.txt`)
     Err(err)
@@ -31,15 +31,15 @@ func GenOUI() {
 
         if matchOUI.MatchString(t) {
             m := matchOUI.FindStringSubmatch(t)
-
             mac := strings.ToLower(strings.Replace(m[1], "-", ":", -1))
             vendor := m[2]
 
-            _, err = stmt.Exec(mac, vendor)
-            Err(err)
+            fmt.Println(mac, "->", vendor)
+
+            res = append(res, []interface{}{mac, vendor})
         }
     }
 
-    err = tx.Commit()
+    _, err = db.PDB.CopyFrom(context.Background(), pgx.Identifier{"oui"}, []string{"mac", "vendor"}, pgx.CopyFromRows(res))
     Err(err)
 }

@@ -10,65 +10,88 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/db"
-    "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/schema/contradb"
 )
 
 var (
-    dhcpHostnameToLeases     map[string][]schema.LeaseDetails
+    //dhcpHostnameToLeases     map[string][]schema.LeaseDetails
+    dhcpHostnameToLeases     sync.Map
     dhcpHostnameToLeasesLock sync.Mutex
-    dhcpIPToLease            map[string]schema.LeaseDetails
-    dhcpIPToLeaseLock        sync.Mutex
+    //dhcpIPToLease            map[string]schema.LeaseDetails
+    dhcpIPToLease     sync.Map
+    dhcpIPToLeaseLock sync.Mutex
 )
 
-func cacheDHCP() {
+func cacheDHCP() (ipsSeen, hostnamesSeen int) {
     leases, err := db.GetLeaseDetails()
     Err(err)
 
     dhcpHostnameToLeasesLock.Lock()
     dhcpIPToLeaseLock.Lock()
 
-    dhcpHostnameToLeases = map[string][]schema.LeaseDetails{}
-    dhcpIPToLease = map[string]schema.LeaseDetails{}
+    dhcpHostnameToLeases = sync.Map{}
+    dhcpIPToLease = sync.Map{}
+
+    dhcpHostnameToLeasesTemp := map[string][]contradb.LeaseDetails{}
 
     for _, lease := range leases {
-        if lease.Hostname == "" {
+        dhcpIPToLease.Store(lease.IP.String(), lease)
+        ipsSeen++
+        //dhcpIPToLease[lease.IP.String()] = lease
+
+        if lease.Hostname == nil {
             continue
         }
 
-        hostname := strings.ToLower(lease.Hostname)
-        if _, exists := dhcpHostnameToLeases[hostname]; !exists {
-            dhcpHostnameToLeases[hostname] = []schema.LeaseDetails{}
+        hostname := strings.ToLower(*lease.Hostname)
+        if _, exists := dhcpHostnameToLeasesTemp[hostname]; !exists {
+            hostnamesSeen++
+            dhcpHostnameToLeasesTemp[hostname] = []contradb.LeaseDetails{}
         }
-        dhcpHostnameToLeases[hostname] = append(dhcpHostnameToLeases[hostname], lease)
+        dhcpHostnameToLeasesTemp[hostname] = append(dhcpHostnameToLeasesTemp[hostname], lease)
+    }
 
-        dhcpIPToLease[lease.IP.String()] = lease
+    for hostname, leases := range dhcpHostnameToLeasesTemp {
+        dhcpHostnameToLeases.Store(hostname, leases)
     }
 
     dhcpHostnameToLeasesLock.Unlock()
     dhcpIPToLeaseLock.Unlock()
+
+    return
 }
 
 func dhcpRefreshWorker() {
     for range time.Tick(time.Duration(dhcpRefreshInterval) * time.Second) {
         clog.Info("Refreshing DHCP lease cache")
         began := time.Now()
-        cacheDHCP()
-        clog.Infof("DHCP lease cache refreshed in %v. %d distinct hostnames and %d distinct IPs found.", time.Since(began), len(dhcpHostnameToLeases), len(dhcpIPToLease))
+        ipsSeen, hostnamesSeen := cacheDHCP()
+        clog.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
     }
 }
 
-func getLeasesByHostname(hostname string) ([]schema.LeaseDetails, bool) {
+func getLeasesByHostname(hostname string) ([]contradb.LeaseDetails, bool) {
     dhcpHostnameToLeasesLock.Lock()
-    v, ok := dhcpHostnameToLeases[hostname]
+    v, ok := dhcpHostnameToLeases.Load(hostname)
     dhcpHostnameToLeasesLock.Unlock()
-    return v, ok
+
+    if ok {
+        return v.([]contradb.LeaseDetails), ok
+    } else {
+        return []contradb.LeaseDetails{}, ok
+    }
 }
 
-func getLeaseByIP(ip string) (schema.LeaseDetails, bool) {
+func getLeaseByIP(ip string) (contradb.LeaseDetails, bool) {
     dhcpIPToLeaseLock.Lock()
-    v, ok := dhcpIPToLease[ip]
+    v, ok := dhcpIPToLease.Load(ip)
     dhcpIPToLeaseLock.Unlock()
-    return v, ok
+
+    if ok {
+        return v.(contradb.LeaseDetails), ok
+    } else {
+        return contradb.LeaseDetails{}, ok
+    }
 }
 
 func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
@@ -78,10 +101,10 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
         for _, lease := range v {
             if lease.IP.To4() != nil {
                 if q._qu.Qtype == dns.TypeA {
-                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To4().String())
-                    err = q.Respond(m)
                     clog.Debug("lease IP is IPv4, question is A")
                     q.action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
+                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To4().String())
+                    err = q.Respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
                     clog.Debug("lease IP is IPv4, question is AAAA")
@@ -90,10 +113,10 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
 
             } else if lease.IP.To16() != nil {
                 if q._qu.Qtype == dns.TypeAAAA {
-                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To16().String())
-                    err = q.Respond(m)
                     clog.Debug("lease IP is IPv6, question is AAAA")
                     q.action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
+                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To16().String())
+                    err = q.Respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
                     clog.Debug("lease IP is IPv6, question is A")
@@ -127,8 +150,13 @@ func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
         ip := bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1]
 
         if v, ok := getLeaseByIP(ip); ok {
+            if v.Hostname == nil {
+                return
+            }
+
             q.action = "ddns-ptr"
-            m := genResponse(q.r, q._qu.Qtype, v.IP.String())
+
+            m := genResponse(q.r, q._qu.Qtype, *v.Hostname)
             err := q.Respond(m)
             return true, dns.RcodeSuccess, err
         }

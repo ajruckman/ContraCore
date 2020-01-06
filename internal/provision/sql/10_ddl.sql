@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS log
     question_type   TEXT      NOT NULL,
     action          TEXT      NOT NULL,
     answers         TEXT[],
+    client_mac      MACADDR,
     client_hostname TEXT,
-    client_mac      TEXT,
     client_vendor   TEXT,
 
     CONSTRAINT log_pk PRIMARY KEY (id),
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS lease
     time     TIMESTAMP NOT NULL DEFAULT now(),
     source   TEXT      NOT NULL,
     op       CHAR(3)   NOT NULL CHECK (op IN ('add', 'old', 'del')),
-    mac      TEXT      NOT NULL,
+    mac      MACADDR   NOT NULL,
     ip       INET      NOT NULL,
     hostname TEXT,
     vendor   TEXT,
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS lease
 ----- OUI
 CREATE TABLE IF NOT EXISTS oui
 (
-    mac    TEXT,
+    mac    CHAR(8),
     vendor TEXT
 );
 
@@ -76,10 +76,10 @@ CREATE TABLE IF NOT EXISTS config
 CREATE OR REPLACE VIEW lease_details AS
 SELECT lease.time, lease.op, lease.mac, lease.ip, lease.hostname, lease.vendor
 FROM lease
-WHERE (id, ip) IN (
-    SELECT max(id), ip
+WHERE (id) IN (
+    SELECT max(id)
     FROM lease
-    GROUP BY ip)
+    GROUP BY mac)
 ORDER BY id DESC;
 
 CREATE OR REPLACE VIEW log_details_recent AS
@@ -90,8 +90,8 @@ SELECT l.id,
        l.question_type,
        l.action,
        l.answers,
-       l.client_hostname,
        l.client_mac,
+       l.client_hostname,
        l.client_vendor
 FROM log l
 ORDER BY l.id DESC

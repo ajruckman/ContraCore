@@ -4,14 +4,17 @@ import (
     "time"
 
     "github.com/coredns/coredns/plugin/pkg/log"
+    "github.com/davecgh/go-spew/spew"
+    "github.com/miekg/dns"
     "go.uber.org/atomic"
 
     "github.com/ajruckman/ContraCore/internal/db"
+    "github.com/ajruckman/ContraCore/internal/eventserver"
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
 var (
-    logChannel = make(chan schema.Log)
+    logChannel = make(chan queryContext)
     clog       = log.NewWithPlugin("contradomain")
 
     logMonInterval = 30
@@ -23,17 +26,72 @@ var (
     logPassedTotCount      atomic.Uint32
 
     dhcpRefreshInterval = 15
+
+    logDurations = true
 )
 
 func logWorker() {
-    for v := range logChannel {
-        err := db.LogC(v)
+    for q := range logChannel {
+
+        began := time.Now()
+        v := schema.Log{
+            Time:         q.received,
+            Client:       q._client,
+            Question:     q._domain,
+            QuestionType: dns.TypeToString[q._qu.Qtype],
+            Action:       q.action,
+            Answers:      q.answers,
+
+            QueryID:  q.r.Id,
+            Duration: time.Now().Sub(q.received),
+
+            ClientMAC:      q.mac,
+            ClientHostname: q.hostname,
+            ClientVendor:   q.vendor,
+        }
+        q.durations.timeGenLogStruct = time.Since(began)
+
+        began = time.Now()
+        err := db.Log(v)
         if err != nil {
+            spew.Dump(v)
+
             clog.Warningf("could not insert log for query '%s'", v.Question)
             clog.Warning(err.Error())
         }
+        q.durations.timeSaveLogToPG = time.Since(began)
 
-        clog.Infof("%s <- %d %s %v", v.Client, v.QueryID, v.QuestionType, v.Duration)
+        began = time.Now()
+        err = db.LogC(v)
+        if err != nil {
+            clog.Warningf("could not insert secondary log for query '%s'", v.Question)
+            clog.Warning(err.Error())
+        }
+        q.durations.timeSaveLogToCH = time.Since(began)
+
+        began = time.Now()
+        eventserver.Tick(v)
+        q.durations.timeSendLogToEventClients = time.Since(began)
+
+        if !logDurations {
+            clog.Infof("%s <- %d %s %s %v", v.Client, v.QueryID, v.Question, v.QuestionType, v.Duration)
+        } else {
+            clog.Infof("%s <- %d %s %s %v\n\tLookup lease:        %v\n\tRespond by hostname: %v\n\tRespond by PTR:      %v\n\tRespond with block:  %v\n\tGen log struct:      %v\n\tSave to PG:          %v\n\tSave to CH:          %v\n\tSend to clients:     %v",
+                v.Client,
+                v.QueryID,
+                v.Question,
+                v.QuestionType,
+                v.Duration,
+                q.durations.timeLookupLease,
+                q.durations.timeCheckRespondByHostname,
+                q.durations.timeCheckRespondByPTR,
+                q.durations.timeCheckRespondWithBlock,
+                q.durations.timeGenLogStruct,
+                q.durations.timeSaveLogToPG,
+                q.durations.timeSaveLogToCH,
+                q.durations.timeSendLogToEventClients,
+            )
+        }
 
         logCount.Inc()
 
