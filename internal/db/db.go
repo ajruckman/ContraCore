@@ -19,7 +19,10 @@ var (
 func init() {
     var err error
 
+    //contraDBConf := `postgres://contradbmgr:contradbmgr@10.2.0.104/contradb`
+    //contraDBConf := `postgres://contradbmgr:contradbmgr@10.3.0.16/contradb`
     contraDBConf := `postgres://contradbmgr:contradbmgr@127.0.0.1/contradb`
+
     XDB, err = sqlx.Connect("pgx", contraDBConf)
     Err(err)
 

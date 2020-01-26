@@ -65,6 +65,19 @@ CREATE TABLE IF NOT EXISTS lease
     CONSTRAINT lease_pk PRIMARY KEY (id)
 );
 
+CREATE TABLE IF NOT EXISTS reservation
+(
+    id      SERIAL    NOT NULL,
+    time    TIMESTAMP NOT NULL DEFAULT now(),
+    active  BOOLEAN   NOT NULL DEFAULT TRUE,
+    mac     MACADDR   NOT NULL,
+    ip      INET      NOT NULL,
+    creator TEXT,
+    comment TEXT,
+
+    CONSTRAINT reservation_pk PRIMARY KEY (id)
+);
+
 ----- OUI
 CREATE TABLE IF NOT EXISTS oui
 (
@@ -75,10 +88,14 @@ CREATE TABLE IF NOT EXISTS oui
 ----- Config
 CREATE TABLE IF NOT EXISTS config
 (
-    id             SERIAL  NOT NULL,
-    sources        TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
-    search_domains TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
-    domain_needed  BOOLEAN NOT NULL DEFAULT TRUE,
+    id              SERIAL  NOT NULL,
+    sources         TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
+    search_domains  TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
+    domain_needed   BOOLEAN NOT NULL DEFAULT TRUE,
+    spoofed_a       TEXT    NOT NULL DEFAULT '0.0.0.0',
+    spoofed_aaaa    TEXT    NOT NULL DEFAULT '::',
+    spoofed_cname   TEXT    NOT NULL DEFAULT '',
+    spoofed_default TEXT    NOT NULL DEFAULT '-',
 
     CONSTRAINT config_pk PRIMARY KEY (id)
 );
@@ -90,7 +107,7 @@ FROM lease
 WHERE (id) IN (
     SELECT max(id)
     FROM lease
-    GROUP BY mac)
+    GROUP BY ip)
 ORDER BY id DESC;
 
 CREATE OR REPLACE VIEW log_details_recent AS

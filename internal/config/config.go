@@ -17,7 +17,11 @@ func init() {
 
     Config, err = db.GetConfig()
 
-    if err == sql.ErrNoRows || Config.ID == 0 {
+    if err != nil && err != sql.ErrNoRows {
+        Err(err)
+    }
+
+    if err == sql.ErrNoRows {
         fmt.Println("Generating default config")
 
         db.InsertDefaultConfig()

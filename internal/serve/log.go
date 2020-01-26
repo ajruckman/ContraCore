@@ -1,6 +1,9 @@
 package serve
 
 import (
+    "context"
+    "math/rand"
+    "sync"
     "time"
 
     "github.com/coredns/coredns/plugin/pkg/log"
@@ -17,6 +20,9 @@ var (
     logChannel = make(chan queryContext)
     clog       = log.NewWithPlugin("contradomain")
 
+    logBuffer     []queryContext
+    logBufferLock sync.Mutex
+
     logMonInterval = 30
     logCount       atomic.Uint32
 
@@ -30,8 +36,22 @@ var (
     logDurations = true
 )
 
-func logWorker() {
-    for q := range logChannel {
+func saveQueries(buffer []queryContext) {
+    // Create transactions
+    pdbTX, err := db.PDB.Begin(context.Background())
+    if err != nil {
+        clog.Warningf("could not begin PDB transaction")
+        clog.Warning(err.Error())
+    }
+
+    cdbTX, err := db.CDB.Begin()
+    if err != nil {
+        clog.Warningf("could not begin CDB transaction")
+        clog.Warning(err.Error())
+    }
+
+    // Save queries
+    for _, q := range buffer {
 
         began := time.Now()
         v := schema.Log{
@@ -42,7 +62,9 @@ func logWorker() {
             Action:       q.action,
             Answers:      q.answers,
 
-            QueryID:  q.r.Id,
+            //QueryID: q.r.Id, // This isn't unique
+            QueryID: uint16(rand.Intn(65536)),
+
             Duration: time.Now().Sub(q.received),
 
             ClientMAC:      q.mac,
@@ -52,26 +74,32 @@ func logWorker() {
         q.durations.timeGenLogStruct = time.Since(began)
 
         began = time.Now()
-        err := db.Log(v)
-        if err != nil {
-            spew.Dump(v)
-
-            clog.Warningf("could not insert log for query '%s'", v.Question)
-            clog.Warning(err.Error())
-        }
-        q.durations.timeSaveLogToPG = time.Since(began)
-
-        began = time.Now()
-        err = db.LogC(v)
-        if err != nil {
-            clog.Warningf("could not insert secondary log for query '%s'", v.Question)
-            clog.Warning(err.Error())
-        }
-        q.durations.timeSaveLogToCH = time.Since(began)
-
-        began = time.Now()
-        eventserver.Tick(v)
+        eventserver.Transmit(v)
         q.durations.timeSendLogToEventClients = time.Since(began)
+
+        if pdbTX != nil {
+            began = time.Now()
+            err := db.Log(pdbTX, v)
+            if err != nil {
+                spew.Dump(v)
+
+                clog.Warningf("could not insert log for query '%s'", v.Question)
+                clog.Warning(err.Error())
+            }
+            q.durations.timeSaveLogToPG = time.Since(began)
+        } else {
+            clog.Warningf("not logging query '%s' because pdbTX is nil", v.Question)
+        }
+
+        if cdbTX != nil {
+            began = time.Now()
+            err = db.LogC(cdbTX, v)
+            if err != nil {
+                clog.Warningf("could not insert secondary log for query '%s'", v.Question)
+                clog.Warning(err.Error())
+            }
+            q.durations.timeSaveLogToCH = time.Since(began)
+        }
 
         if !logDurations {
             clog.Infof("%s <- %d %s %s %v", v.Client, v.QueryID, v.Question, v.QuestionType, v.Duration)
@@ -93,14 +121,59 @@ func logWorker() {
             )
         }
 
-        logCount.Inc()
-
         if v.Action == "pass" {
             logPassedTotCount.Inc()
             logPassedTotDuration.Add(v.Duration)
         } else {
             logAnsweredTotCount.Inc()
             logAnsweredTotDuration.Add(v.Duration)
+        }
+    }
+
+    logCount.Add(uint32(len(buffer)))
+}
+
+func logWorker() {
+    var (
+        query queryContext
+        timer = time.NewTimer(time.Second * 10)
+    )
+
+    // Debounce code from: https://drailing.net/2018/01/debounce-function-for-golang/
+    for {
+        select {
+        case query = <-logChannel:
+            logBufferLock.Lock()
+            logBuffer = append(logBuffer, query)
+
+            if len(logBuffer) > 10 {
+                clog.Infof("log buffer contains %d queries; saving to database", len(logBuffer))
+            }
+
+            logBufferLock.Unlock()
+
+            timer.Reset(time.Second * 10)
+
+        case <-timer.C:
+            logBufferLock.Lock()
+
+            // Check buffer
+            if len(logBuffer) == 0 {
+                clog.Info("nothing new to log; continuing")
+                continue
+            } else {
+                clog.Infof("timer expired and log buffer contains %d queries; saving to database", len(logBuffer))
+            }
+
+            // Copy buffer
+            buffer := make([]queryContext, len(logBuffer))
+            copy(buffer, logBuffer)
+            logBuffer = []queryContext{}
+
+            logBufferLock.Unlock()
+
+            // Save buffer
+            saveQueries(buffer)
         }
     }
 }

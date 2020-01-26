@@ -2,6 +2,8 @@ package serve
 
 import (
     "github.com/miekg/dns"
+
+    "github.com/ajruckman/ContraCore/internal/config"
 )
 
 func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
@@ -12,19 +14,19 @@ func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
 
         switch q._qu.Qtype {
         case dns.TypeA:
-            v = "0.0.0.0"
-            m = genResponse(q.r, q._qu.Qtype, "0.0.0.0")
+            v = config.Config.SpoofedA
+            m = genResponse(q.r, q._qu.Qtype, v)
 
         case dns.TypeAAAA:
-            v = "::"
-            m = genResponse(q.r, q._qu.Qtype, "::")
+            v = config.Config.SpoofedAAAA
+            m = genResponse(q.r, q._qu.Qtype, v)
 
         case dns.TypeCNAME:
-            v = ""
-            m = genResponse(q.r, q._qu.Qtype, "")
+            v = config.Config.SpoofedCNAME
+            m = genResponse(q.r, q._qu.Qtype, v)
 
         default:
-            v = "-"
+            v = config.Config.SpoofedDefault
         }
 
         clog.Infof("Blocking query '%s' with value '%s'", q._domain, v)

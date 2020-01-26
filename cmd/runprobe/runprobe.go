@@ -19,9 +19,9 @@ func main() {
     for range t.C {
         fmt.Println("TICK")
 
-        r, _, err := c.Exchange(m, "10.3.0.16:53")
+        r, _, err := c.Exchange(m, "127.0.0.1:5300")
 
-        if err == nil && r.Rcode == dns.RcodeSuccess {
+        if err == nil && r.Rcode == 15 {
             if !lastUp {
                 onServerUp()
             }

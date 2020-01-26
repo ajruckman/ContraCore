@@ -2,10 +2,7 @@ package main
 
 import (
     "fmt"
-    "io/ioutil"
-    "net/http"
-
-    . "github.com/ajruckman/xlib"
+    "math/rand"
 )
 
 var (
@@ -19,18 +16,31 @@ var (
 )
 
 func init() {
-    for _, url := range urls {
-        fmt.Print("Reading ", url, "... ")
-        resp, err := http.Get(url)
-        Err(err)
-        read, err := ioutil.ReadAll(resp.Body)
-        Err(err)
-        contents = append(contents, read)
-        fmt.Println("done")
-    }
+    //for _, url := range urls {
+    //    fmt.Print("Reading ", url, "... ")
+    //    resp, err := http.Get(url)
+    //    Err(err)
+    //    read, err := ioutil.ReadAll(resp.Body)
+    //    Err(err)
+    //    contents = append(contents, read)
+    //    fmt.Println("done")
+    //}
 }
 
 func main() {
+    for i := 0; i < 100000000000; i++ {
+        n := rand.Intn(65536)
+        if n > 65535 {
+            fmt.Println(n)
+        }
+        //n := 100 + rand.Intn(900)
+        //if n > 999 {
+        //    fmt.Println(n)
+        //}
+        //if n < 100 {
+        //    fmt.Println(n)
+        //}
+    }
     //began := time.Now()
     //res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
     //

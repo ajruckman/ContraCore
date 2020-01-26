@@ -18,6 +18,6 @@ type Log struct {
     ClientHostname *string           `db:"client_hostname"`
     ClientVendor   *string           `db:"client_vendor"`
 
-    QueryID  uint16        `db:"-" json:"-"`
+    QueryID  uint16        `db:"-"`
     Duration time.Duration `db:"-" json:"-"`
 }

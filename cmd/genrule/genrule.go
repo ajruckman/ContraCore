@@ -14,7 +14,7 @@ var (
         "http://localhost/contradomain/blu",
         "http://localhost/contradomain/basic",
         //"http://localhost/contradomain/ultimate",
-        //"http://localhost/contradomain/unified",
+        //"http://localhost/contradomain/unified",vim
 
         //"https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
         //"https://raw.githubusercontent.com/EnergizedProtection/block/master/bluGo/formats/domains.txt",
@@ -43,7 +43,7 @@ var (
         //
         "https://hosts-file.net/grm.txt",
         "https://hosts-file.net/exp.txt",
-        "https://hosts-file.net/emd.txt",
+        //"https://hosts-file.net/emd.txt",
         //"https://hosts-file.net/psh.txt",
         //"https://hosts-file.net/ad_servers.txt",
         //"https://reddestdream.github.io/Projects/MinimalHosts/etc/MinimalHostsBlocker/minimalhosts",

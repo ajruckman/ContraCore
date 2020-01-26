@@ -33,7 +33,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
     }
 
     if q._domain == "!runprobe" {
-        return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, dns.RcodeSuccess))
+        return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, 15)) // 15 = max valid unassigned RCODE
     }
 
     var began time.Time

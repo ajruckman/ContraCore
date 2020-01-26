@@ -1,11 +1,25 @@
 SELECT count(*)
 FROM log;
 
+-----
+
+UPDATE config
+SET sources = ARRAY [
+    'https://hosts-file.net/grm.txt',
+    'https://hosts-file.net/exp.txt',
+    'https://v.firebog.net/hosts/static/w3kbl.txt',
+    'https://v.firebog.net/hosts/Easyprivacy.txt',
+    'https://raw.githubusercontent.com/crazy-max/WindowsSpyBlocker/master/data/hosts/spy.txt',
+    'https://v.firebog.net/hosts/Prigent-Malware.txt',
+    'https://v.firebog.net/hosts/Prigent-Phishing.txt'
+        'https://v.firebog.net/hosts/Shalla-mal.txt']
+WHERE TRUE;
+
 ----- Remove trailing periods
 
 UPDATE log
 SET answers =
-    array(SELECT trim(TRAILING '.' FROM elem) FROM unnest(answers) elem);
+        array(SELECT trim(TRAILING '.' FROM elem) FROM unnest(answers) elem);
 
 -- select * from log where id = 475755;
 ---- {wildcard.weather.microsoft.com.edgekey.net.,e15275.g.akamaiedge.net.,104.98.58.140}
@@ -60,8 +74,8 @@ $$ LANGUAGE SQL;
 
 CREATE OR REPLACE VIEW question_counts_per_hour AS
 SELECT ts_round(time, 3600)
-    AS hour,
-    count(l.id)
+           AS hour,
+       count(l.id)
 FROM log l
 GROUP BY 1
 ORDER BY 1;
@@ -132,6 +146,6 @@ WHERE 'moatpixel.com' ~ pattern;
 
 SELECT l.ip, l.hostname, l.vendor, count(d.question) AS c
 FROM lease_details l
-     RIGHT OUTER JOIN log d ON l.ip = d.client
+         RIGHT OUTER JOIN log d ON l.ip = d.client
 GROUP BY l.ip, l.hostname, l.vendor
 ORDER BY c DESC;

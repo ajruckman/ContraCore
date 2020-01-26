@@ -11,7 +11,14 @@ import (
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
-var clients = map[string]net.Conn{}
+var (
+    clients = map[string]net.Conn{}
+    queue   = make(chan schema.Log)
+)
+
+func init() {
+    go transmitWorker()
+}
 
 func Serve() {
     listen()
@@ -32,24 +39,6 @@ func listen() {
 
 func setup(conn net.Conn) {
     clients[conn.RemoteAddr().String()] = conn
-
-    //recent, err := db.GetLastNLogs(1000)
-    //Err(err)
-    //
-    //for i := len(recent) - 1; i >= 0; i-- {
-    //    content := marshal(recent[i])
-    //
-    //    _, err = conn.Write(content)
-    //    if err != nil {
-    //        if _, ok := err.(*net.OpError); ok {
-    //            fmt.Println("Deleting broken client:", conn.RemoteAddr().String())
-    //            delete(clients, conn.RemoteAddr().String())
-    //        } else {
-    //            fmt.Println(reflect.TypeOf(err))
-    //            Err(err)
-    //        }
-    //    }
-    //}
 }
 
 func marshal(log schema.Log) []byte {
@@ -69,6 +58,7 @@ func marshal(log schema.Log) []byte {
         ClientMAC      *string
         ClientHostname *string
         ClientVendor   *string
+        QueryID        uint16
     }{
         Time:           log.Time,
         Client:         log.Client,
@@ -79,6 +69,7 @@ func marshal(log schema.Log) []byte {
         ClientMAC:      m,
         ClientHostname: log.ClientHostname,
         ClientVendor:   log.ClientVendor,
+        QueryID:        log.QueryID,
     }
 
     content, err := json.Marshal(l)
@@ -87,18 +78,24 @@ func marshal(log schema.Log) []byte {
     return append(content, '\n')
 }
 
-func Tick(log schema.Log) {
-    content := marshal(log)
+func Transmit(log schema.Log) {
+    queue <- log
+}
 
-    for _, conn := range clients {
-        _, err := conn.Write(content)
+func transmitWorker() {
+    for log := range queue {
+        content := marshal(log)
 
-        if err != nil {
-            if _, ok := err.(*net.OpError); ok {
-                fmt.Println("Deleting disconnected client:", conn.RemoteAddr().String())
-                delete(clients, conn.RemoteAddr().String())
-            } else {
-                Err(err)
+        for _, conn := range clients {
+            _, err := conn.Write(content)
+
+            if err != nil {
+                if _, ok := err.(*net.OpError); ok {
+                    fmt.Println("Deleting disconnected client:", conn.RemoteAddr().String())
+                    delete(clients, conn.RemoteAddr().String())
+                } else {
+                    Err(err)
+                }
             }
         }
     }

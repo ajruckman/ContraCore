@@ -12,7 +12,12 @@ import (
 func main() {
     fmt.Println("Generating run.go")
 
-    if _, err := os.Stat("./run.go"); err == nil {
+    err := os.Chdir("./provision")
+    if err != nil {
+        panic(err)
+    }
+
+    if _, err = os.Stat("./run.go"); err == nil {
         err = os.Remove("./run.go")
         if err != nil {
             panic(err)

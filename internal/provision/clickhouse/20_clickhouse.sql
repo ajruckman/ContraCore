@@ -10,9 +10,14 @@ CREATE TABLE contralog.log
     answers         Array(String),
     client_hostname Nullable(String),
     client_mac      Nullable(String),
-    client_vendor   Nullable(String)
+    client_vendor   Nullable(String),
+    query_id        INT
 )
     ENGINE = MergeTree(event_date, (client, question, question_type), 8192);
+
+DROP TABLE contralog.log_buffer;
+-- num_layers, min_time, max_time, min_rows, max_rows, min_bytes, max_bytes
+CREATE TABLE contralog.log_buffer AS contralog.log ENGINE = Buffer(contralog, log, 1, 10, 120, 10, 300, 0, 16000);
 
 -- CREATE TABLE contralog.log2
 -- (
@@ -57,10 +62,13 @@ FROM (
 ORDER BY hour;
 
 SELECT count(*)
-FROM log
+FROM log;
+
+select * from log_buffer where question = 'xmpp010.hpeprint.com' and query_id != 0
 
 /*
 
  cat log_for_clickhouse_1.csv | clickhouse-client --query "INSERT INTO contralog.log FORMAT CSV" --user contralogmgr --password contralogmgr
 
  */
+

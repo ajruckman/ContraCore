@@ -7,4 +7,6 @@
     }
     log
     errors
+
+    pprof :6060
 }
