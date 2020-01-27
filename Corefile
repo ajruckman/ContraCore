@@ -6,7 +6,7 @@
        health_check 5s
     }
     log
-    errors
+    #errors
 
-    pprof :6060
+    #pprof :6060
 }

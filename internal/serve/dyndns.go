@@ -94,7 +94,7 @@ func getLeaseByIP(ip string) (contradb.LeaseDetails, bool) {
     }
 }
 
-func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
+func respondByHostname(q *queryInfo) (ret bool, rcode int, err error) {
     if v, ok := getLeasesByHostname(q._domain); ok {
         var m *dns.Msg
 
@@ -139,7 +139,7 @@ var (
     getReverse   = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)\.(\d+)\.in-addr.arpa$`)
 )
 
-func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
+func respondByPTR(q *queryInfo) (ret bool, rcode int, err error) {
     if q._qu.Qtype != dns.TypePTR {
         return
     }

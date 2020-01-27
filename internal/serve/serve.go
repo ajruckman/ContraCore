@@ -21,7 +21,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         return 0, errors.New("this should never happen")
     }
 
-    q := queryContext{
+    q := queryInfo{
         ResponseWriter: w,
         r:              r,
 
@@ -99,7 +99,7 @@ next:
     return plugin.NextOrFailure(name, next, ctx, q, r)
 }
 
-type queryContext struct {
+type queryInfo struct {
     dns.ResponseWriter
     r *dns.Msg
 
@@ -130,7 +130,7 @@ type durations struct {
     timeSendLogToEventClients  time.Duration
 }
 
-func (q *queryContext) Respond(res *dns.Msg) (err error) {
+func (q *queryInfo) Respond(res *dns.Msg) (err error) {
     var answers []string
     for _, v := range res.Answer {
         answers = append(answers, rrToString(v))
@@ -143,6 +143,6 @@ func (q *queryContext) Respond(res *dns.Msg) (err error) {
     return
 }
 
-func (q queryContext) WriteMsg(r *dns.Msg) error {
+func (q queryInfo) WriteMsg(r *dns.Msg) error {
     return q.Respond(r)
 }

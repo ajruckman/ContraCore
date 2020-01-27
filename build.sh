@@ -1,9 +1,10 @@
 #!/bin/bash
 
 set +H
+git config --global --add url."git@github.com:".insteadOf "https://github.com/"
 
 go env -w GOARCH="amd64"
-#go env -w GOOS="windows"
+go env -w GOOS="linux"
 
 cd $GOPATH/src/github.com/ajruckman/ContraCore/internal || exit
 go generate
@@ -18,12 +19,11 @@ cd $GOPATH/src/github.com/coredns/coredns/ || exit
 
 go env -w GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib"
 
-#go env -w GOARCH="arm"
-#go env -w GOARM="7"
+go env -w GOARCH="arm"
+go env -w GOARM="7"
 
 sed -i '/ContraCore/d' go.sum
-GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib" make || exit
+make || exit
 
-#./coredns -conf $GOPATH/src/github.com/ajruckman/ContraCore/Corefile
-./coredns -conf /mnt/d/Corefile
+./coredns -conf $GOPATH/src/github.com/ajruckman/ContraCore/Corefile
 

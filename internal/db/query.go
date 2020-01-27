@@ -14,33 +14,35 @@ import (
 )
 
 func GetLeaseDetails() (res []contradb.LeaseDetails, err error) {
-    var rows *sqlx.Rows
+    if PostgresOnline.Load() {
+        var rows *sqlx.Rows
 
-    rows, err = XDB.Queryx(`SELECT time, op, ip, mac, hostname, vendor FROM lease_details;`)
-    if err != nil {
-        return
-    }
-
-    //err = XDB.Select(&res, `SELECT * FROM lease_details;`)
-    //Err(err)
-
-    defer rows.Close()
-
-    for rows.Next() {
-        var n = internalLeaseDetails{}
-        err = rows.StructScan(&n)
+        rows, err = XDB.Queryx(`SELECT time, op, ip, mac, hostname, vendor FROM lease_details;`)
         if err != nil {
             return
         }
 
-        res = append(res, contradb.LeaseDetails{
-            Time:     n.Time,
-            Op:       n.Op,
-            IP:       n.IP.IPNet.IP,
-            MAC:      n.MAC.Addr,
-            Hostname: n.Hostname,
-            Vendor:   n.Vendor,
-        })
+        //err = XDB.Select(&res, `SELECT * FROM lease_details;`)
+        //Err(err)
+
+        defer rows.Close()
+
+        for rows.Next() {
+            var n = internalLeaseDetails{}
+            err = rows.StructScan(&n)
+            if err != nil {
+                return
+            }
+
+            res = append(res, contradb.LeaseDetails{
+                Time:     n.Time,
+                Op:       n.Op,
+                IP:       n.IP.IPNet.IP,
+                MAC:      n.MAC.Addr,
+                Hostname: n.Hostname,
+                Vendor:   n.Vendor,
+            })
+        }
     }
 
     return
@@ -56,17 +58,23 @@ type internalLeaseDetails struct {
 }
 
 func GetOUI() (res []contradb.OUI, err error) {
-    err = XDB.Select(&res, `SELECT * FROM oui;`)
+    if PostgresOnline.Load() {
+        err = XDB.Select(&res, `SELECT * FROM oui;`)
+    }
     return
 }
 
 func GetConfig() (res contradb.Config, err error) {
-    err = XDB.Get(&res, `SELECT * FROM config ORDER BY id DESC LIMIT 1`)
+    if PostgresOnline.Load() {
+        err = XDB.Get(&res, `SELECT * FROM config ORDER BY id DESC LIMIT 1`)
+    }
     return
 }
 
 func GetRules() (res []contradb.Rule, err error) {
-    err = XDB.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
+    if PostgresOnline.Load() {
+        err = XDB.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
+    }
     return
 }
 

@@ -2,12 +2,14 @@ package serve
 
 import (
     "context"
+    "database/sql"
     "math/rand"
     "sync"
     "time"
 
     "github.com/coredns/coredns/plugin/pkg/log"
     "github.com/davecgh/go-spew/spew"
+    "github.com/jackc/pgx/v4"
     "github.com/miekg/dns"
     "go.uber.org/atomic"
 
@@ -17,13 +19,17 @@ import (
 )
 
 var (
-    logChannel = make(chan queryContext)
+    ctx = context.Background()
+
+    logChannel = make(chan queryInfo)
     clog       = log.NewWithPlugin("contradomain")
 
-    logBuffer     []queryContext
-    logBufferLock sync.Mutex
+    queryLogBuffer              []queryInfo
+    queryLogBufferLock          sync.Mutex
+    queryLogBufferSaveThreshold = 30               // Save all in buffer if the buffer contains this many queries
+    queryLogBufferFlushInterval = time.Second * 15 // Save all in buffer if no new logs have been added after this time
 
-    logMonInterval = 30
+    logMonInterval = 15
     logCount       atomic.Uint32
 
     logAnsweredTotDuration atomic.Duration
@@ -36,19 +42,82 @@ var (
     logDurations = true
 )
 
-func saveQueries(buffer []queryContext) {
+func queryLogWorker() {
+    var (
+        query queryInfo
+        timer = time.NewTimer(queryLogBufferFlushInterval)
+    )
+
+    // Debounce code from: https://drailing.net/2018/01/debounce-function-for-golang/
+    for {
+        select {
+        case query = <-logChannel:
+            queryLogBufferLock.Lock()
+            queryLogBuffer = append(queryLogBuffer, query)
+
+            if len(queryLogBuffer) > queryLogBufferSaveThreshold {
+                clog.Infof("log buffer contains %d queries (more than threshold %d); saving to database", len(queryLogBuffer), queryLogBufferSaveThreshold)
+
+                // Save buffer
+                saveQueryLogBuffer()
+            }
+
+            queryLogBufferLock.Unlock()
+
+            timer.Reset(queryLogBufferFlushInterval)
+
+        case <-timer.C:
+            queryLogBufferLock.Lock()
+
+            // Check buffer
+            if len(queryLogBuffer) == 0 {
+                queryLogBufferLock.Unlock()
+                clog.Info("nothing new to log; continuing")
+                timer.Reset(queryLogBufferFlushInterval)
+                continue
+            } else {
+                clog.Infof("timer expired and log buffer contains %d queries; saving to database", len(queryLogBuffer))
+            }
+
+            // Save buffer
+            saveQueryLogBuffer()
+
+            queryLogBufferLock.Unlock()
+
+            timer.Reset(queryLogBufferFlushInterval)
+        }
+    }
+}
+
+func saveQueryLogBuffer() {
     // Create transactions
-    pdbTX, err := db.PDB.Begin(context.Background())
-    if err != nil {
-        clog.Warningf("could not begin PDB transaction")
-        clog.Warning(err.Error())
+    var (
+        pdbTX   pgx.Tx
+        cdbTX   *sql.Tx
+        cdbSTMT *sql.Stmt
+        err     error
+    )
+
+    if db.PostgresOnline.Load() {
+        pdbTX, err = db.PDB.Begin(context.Background())
+        if err != nil {
+            clog.Warningf("could not begin PDB transaction")
+            clog.Warning(err.Error())
+        }
     }
 
-    cdbTX, err := db.CDB.Begin()
-    if err != nil {
-        clog.Warningf("could not begin CDB transaction")
-        clog.Warning(err.Error())
+    if db.ClickHouseOnline.Load() {
+        cdbTX, cdbSTMT, err = db.LogCBeginBatch()
+        if err != nil {
+            clog.Warningf("could not begin CDB transaction")
+            clog.Warning(err.Error())
+        }
     }
+
+    // Copy buffer
+    buffer := make([]queryInfo, len(queryLogBuffer))
+    copy(buffer, queryLogBuffer)
+    queryLogBuffer = []queryInfo{}
 
     // Save queries
     for _, q := range buffer {
@@ -57,7 +126,7 @@ func saveQueries(buffer []queryContext) {
         v := schema.Log{
             Time:         q.received,
             Client:       q._client,
-            Question:     q._domain,
+            Question:     "!internal!" + q._domain,
             QuestionType: dns.TypeToString[q._qu.Qtype],
             Action:       q.action,
             Answers:      q.answers,
@@ -93,7 +162,7 @@ func saveQueries(buffer []queryContext) {
 
         if cdbTX != nil {
             began = time.Now()
-            err = db.LogC(cdbTX, v)
+            err = db.LogC(cdbSTMT, v)
             if err != nil {
                 clog.Warningf("could not insert secondary log for query '%s'", v.Question)
                 clog.Warning(err.Error())
@@ -130,52 +199,21 @@ func saveQueries(buffer []queryContext) {
         }
     }
 
-    logCount.Add(uint32(len(buffer)))
-}
-
-func logWorker() {
-    var (
-        query queryContext
-        timer = time.NewTimer(time.Second * 10)
-    )
-
-    // Debounce code from: https://drailing.net/2018/01/debounce-function-for-golang/
-    for {
-        select {
-        case query = <-logChannel:
-            logBufferLock.Lock()
-            logBuffer = append(logBuffer, query)
-
-            if len(logBuffer) > 10 {
-                clog.Infof("log buffer contains %d queries; saving to database", len(logBuffer))
-            }
-
-            logBufferLock.Unlock()
-
-            timer.Reset(time.Second * 10)
-
-        case <-timer.C:
-            logBufferLock.Lock()
-
-            // Check buffer
-            if len(logBuffer) == 0 {
-                clog.Info("nothing new to log; continuing")
-                continue
-            } else {
-                clog.Infof("timer expired and log buffer contains %d queries; saving to database", len(logBuffer))
-            }
-
-            // Copy buffer
-            buffer := make([]queryContext, len(logBuffer))
-            copy(buffer, logBuffer)
-            logBuffer = []queryContext{}
-
-            logBufferLock.Unlock()
-
-            // Save buffer
-            saveQueries(buffer)
+    if pdbTX != nil {
+        err = pdbTX.Commit(ctx)
+        if err != nil {
+            clog.Warningf("could not commit pdbTX: %s", err.Error())
         }
     }
+
+    if cdbTX != nil {
+        err = cdbTX.Commit()
+        if err != nil {
+            clog.Warningf("could not commit cdbTX: %s", err.Error())
+        }
+    }
+
+    logCount.Add(uint32(len(buffer)))
 }
 
 func logMonitor() {

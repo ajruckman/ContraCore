@@ -6,7 +6,7 @@ import (
     "github.com/ajruckman/ContraCore/internal/config"
 )
 
-func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
+func respondWithBlock(q *queryInfo) (ret bool, rcode int, err error) {
     if ruleCache.check(q._domain) {
         q.action = "block"
         var m *dns.Msg

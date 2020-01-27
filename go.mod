@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/ClickHouse/clickhouse-go v1.3.13
+	github.com/DATA-DOG/go-sqlmock v1.4.0 // indirect
 	github.com/ajruckman/xlib v1.4.1
 	github.com/caddyserver/caddy v1.0.4
 	github.com/coredns/coredns v1.6.6
@@ -21,7 +22,6 @@ require (
 	github.com/miekg/dns v1.1.27
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
-	github.com/spf13/cobra v0.0.5 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2

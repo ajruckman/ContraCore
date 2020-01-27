@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-    go logWorker()
+    go queryLogWorker()
     go logMonitor()
 
     cacheDHCP()
