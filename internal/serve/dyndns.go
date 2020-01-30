@@ -10,6 +10,7 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/db"
+    "github.com/ajruckman/ContraCore/internal/log"
     "github.com/ajruckman/ContraCore/internal/schema/contradb"
 )
 
@@ -20,6 +21,8 @@ var (
     //dhcpIPToLease            map[string]schema.LeaseDetails
     dhcpIPToLease     sync.Map
     dhcpIPToLeaseLock sync.Mutex
+
+    dhcpRefreshInterval = time.Second * 15
 )
 
 func cacheDHCP() (ipsSeen, hostnamesSeen int) {
@@ -62,11 +65,10 @@ func cacheDHCP() (ipsSeen, hostnamesSeen int) {
 }
 
 func dhcpRefreshWorker() {
-    for range time.Tick(time.Duration(dhcpRefreshInterval) * time.Second) {
-        clog.Info("Refreshing DHCP lease cache")
+    for range time.Tick(dhcpRefreshInterval) {
         began := time.Now()
         ipsSeen, hostnamesSeen := cacheDHCP()
-        clog.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
+        log.CLOG.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
     }
 }
 
@@ -94,32 +96,32 @@ func getLeaseByIP(ip string) (contradb.LeaseDetails, bool) {
     }
 }
 
-func respondByHostname(q *queryInfo) (ret bool, rcode int, err error) {
-    if v, ok := getLeasesByHostname(q._domain); ok {
+func respondByHostname(q *log.QueryInfo) (ret bool, rcode int, err error) {
+    if v, ok := getLeasesByHostname(q.Domain_); ok {
         var m *dns.Msg
 
         for _, lease := range v {
             if lease.IP.To4() != nil {
-                if q._qu.Qtype == dns.TypeA {
-                    clog.Debug("lease IP is IPv4, question is A")
-                    q.action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
-                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To4().String())
+                if q.QU_.Qtype == dns.TypeA {
+                    log.CLOG.Debug("lease IP is IPv4, question is A")
+                    q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
+                    m = genResponse(q.R, q.QU_.Qtype, lease.IP.To4().String())
                     err = q.Respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
-                    clog.Debug("lease IP is IPv4, question is AAAA")
+                    log.CLOG.Debug("lease IP is IPv4, question is AAAA")
                     continue
                 }
 
             } else if lease.IP.To16() != nil {
-                if q._qu.Qtype == dns.TypeAAAA {
-                    clog.Debug("lease IP is IPv6, question is AAAA")
-                    q.action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
-                    m = genResponse(q.r, q._qu.Qtype, lease.IP.To16().String())
+                if q.QU_.Qtype == dns.TypeAAAA {
+                    log.CLOG.Debug("lease IP is IPv6, question is AAAA")
+                    q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
+                    m = genResponse(q.R, q.QU_.Qtype, lease.IP.To16().String())
                     err = q.Respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
-                    clog.Debug("lease IP is IPv6, question is A")
+                    log.CLOG.Debug("lease IP is IPv6, question is A")
                     continue
                 }
             }
@@ -139,13 +141,13 @@ var (
     getReverse   = regexp.MustCompile(`^(\d+)\.(\d+)\.(\d+)\.(\d+)\.in-addr.arpa$`)
 )
 
-func respondByPTR(q *queryInfo) (ret bool, rcode int, err error) {
-    if q._qu.Qtype != dns.TypePTR {
+func respondByPTR(q *log.QueryInfo) (ret bool, rcode int, err error) {
+    if q.QU_.Qtype != dns.TypePTR {
         return
     }
 
-    if strings.HasSuffix(q._domain, ".in-addr.arpa") && matchReverse.MatchString(q._domain) {
-        bits := getReverse.FindStringSubmatch(q._domain)
+    if strings.HasSuffix(q.Domain_, ".in-addr.arpa") && matchReverse.MatchString(q.Domain_) {
+        bits := getReverse.FindStringSubmatch(q.Domain_)
 
         ip := bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1]
 
@@ -154,9 +156,9 @@ func respondByPTR(q *queryInfo) (ret bool, rcode int, err error) {
                 return
             }
 
-            q.action = "ddns-ptr"
+            q.Action = "ddns-ptr"
 
-            m := genResponse(q.r, q._qu.Qtype, *v.Hostname)
+            m := genResponse(q.R, q.QU_.Qtype, *v.Hostname)
             err := q.Respond(m)
             return true, dns.RcodeSuccess, err
         }

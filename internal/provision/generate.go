@@ -41,7 +41,7 @@ func main() {
     w.WriteString("import `context`\n")
     w.WriteString("import `github.com/ajruckman/ContraCore/internal/db`\n")
     w.WriteString("import `github.com/coredns/coredns/plugin/pkg/log`\n\n")
-    w.WriteString("func init() {\n")
+    w.WriteString("func Setup() {\n")
     w.WriteString("    clog := log.NewWithPlugin(`contradomain`)\n")
     w.WriteString("    if !db.PostgresOnline.Load() {\n")
     w.WriteString("        clog.Warning(`not connected to PostgreSQL; not provisioning database`)\n")

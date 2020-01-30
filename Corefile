@@ -1,5 +1,9 @@
 .:5300 {
-    contracore
+    contracore {
+        ContraDBURL  postgres://contradbmgr:contradbmgr@10.3.0.16/contradb
+        ContraLogURL tcp://10.3.0.16:9000?username=contralogmgr&password=contralogmgr&database=contralog
+    }
+
     #forward . tls://1.1.1.1 tls://1.0.0.1 {
     forward . 1.1.1.1 1.0.0.1 {
        tls_servername cloudflare-dns.com

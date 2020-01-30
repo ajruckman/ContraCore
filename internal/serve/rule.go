@@ -10,6 +10,7 @@ import (
     . "github.com/ajruckman/xlib"
 
     "github.com/ajruckman/ContraCore/internal/db"
+    "github.com/ajruckman/ContraCore/internal/log"
     "github.com/ajruckman/ContraCore/internal/rulegen"
 )
 
@@ -115,8 +116,8 @@ func (r *ruleTree) check(domain string) bool {
                 return true
             }
         }
-        if logDurations {
-            clog.Debugf("%v: 2 > %v", domain, time.Since(began))
+        if log.LogDurations {
+            log.CLOG.Debugf("%v: 2 > %v", domain, time.Since(began))
         }
 
         fallthrough
@@ -130,8 +131,8 @@ func (r *ruleTree) check(domain string) bool {
                 return true
             }
         }
-        if logDurations {
-            clog.Debugf("%v: 1 > %v", domain, time.Since(began))
+        if log.LogDurations {
+            log.CLOG.Debugf("%v: 1 > %v", domain, time.Since(began))
         }
 
         fallthrough
@@ -143,8 +144,8 @@ func (r *ruleTree) check(domain string) bool {
                 return true
             }
         }
-        if logDurations {
-            clog.Debugf("%v: 0 > %v", domain, time.Since(began))
+        if log.LogDurations {
+            log.CLOG.Debugf("%v: 0 > %v", domain, time.Since(began))
         }
     }
 
@@ -192,7 +193,7 @@ func readRules() {
         }
     }
 
-    clog.Infof("%d rules compiled and stored in %v", len(rules), time.Since(began))
+    log.CLOG.Infof("%d rules compiled and stored in %v", len(rules), time.Since(began))
 
     ruleCache.lock.Unlock()
 }

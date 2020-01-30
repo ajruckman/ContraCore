@@ -35,7 +35,7 @@ func main() {
         count++
 
         began := time.Now()
-        r, _, err := c.Exchange(m, "10.2.0.104:53")
+        r, _, err := c.Exchange(m, "127.0.0.1:5300")
         Err(err)
         dur := time.Since(began)
 

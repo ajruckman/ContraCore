@@ -6,7 +6,7 @@ import `context`
 import `github.com/ajruckman/ContraCore/internal/db`
 import `github.com/coredns/coredns/plugin/pkg/log`
 
-func init() {
+func Setup() {
     clog := log.NewWithPlugin(`contradomain`)
     if !db.PostgresOnline.Load() {
         clog.Warning(`not connected to PostgreSQL; not provisioning database`)

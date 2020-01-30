@@ -1,12 +1,12 @@
 package serve
 
 import (
-    "github.com/ajruckman/ContraCore/internal/eventserver"
+    "github.com/ajruckman/ContraCore/internal/log"
 )
 
 func init() {
-    go queryLogWorker()
-    go logMonitor()
+    go log.QueryLogWorker()
+    go log.LogMonitor()
 
     cacheDHCP()
     go dhcpRefreshWorker()
@@ -15,5 +15,5 @@ func init() {
 
     readRules()
 
-    go eventserver.Serve()
+    go log.Serve()
 }

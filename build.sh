@@ -19,8 +19,8 @@ cd $GOPATH/src/github.com/coredns/coredns/ || exit
 
 go env -w GOPRIVATE="github.com/ajruckman/ContraCore,github.com/ajruckman/xlib"
 
-go env -w GOARCH="arm"
-go env -w GOARM="7"
+#go env -w GOARCH="arm"
+#go env -w GOARM="7"
 
 sed -i '/ContraCore/d' go.sum
 make || exit
