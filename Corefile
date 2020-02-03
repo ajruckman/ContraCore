@@ -1,6 +1,6 @@
 .:5300 {
     contracore {
-        ContraDBURL  postgres://contradbmgr:contradbmgr@10.3.0.16/contradb
+        ContraDBURL  postgres://contradbmgr:contradbmgr@127.0.0.1/contradb
         ContraLogURL tcp://10.3.0.16:9000?username=contralogmgr&password=contralogmgr&database=contralog
     }
 

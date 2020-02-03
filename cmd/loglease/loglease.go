@@ -8,7 +8,7 @@ import (
 
     . "github.com/ajruckman/xlib"
 
-    "github.com/ajruckman/ContraCore/internal/db"
+    "github.com/ajruckman/ContraCore/internal/db/contradb"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 }
 
 func logNewEntry(op, mac, ip, hostname string) {
-    _, err := db.XDB.Exec(`
+    _, err := contradb.XDB.Exec(`
 
 INSERT INTO lease (source, op, ip, mac, hostname, vendor)
 SELECT values.*, o.vendor

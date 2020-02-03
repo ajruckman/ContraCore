@@ -4,7 +4,9 @@ import (
     "fmt"
     "time"
 
-    "github.com/ajruckman/ContraCore/internal/rulegen"
+    "github.com/ajruckman/ContraCore/internal/config"
+    "github.com/ajruckman/ContraCore/internal/db/contradb"
+    "github.com/ajruckman/ContraCore/internal/rule"
 )
 
 var (
@@ -92,7 +94,7 @@ func bench() {
 
     for i := 0; i < checks+1; i++ {
         begin := time.Now()
-        res, total := rulegen.GenFromURLs(urls)
+        res, total := rule.GenFromURLs(urls)
         end := time.Now()
 
         if i != 0 {
@@ -109,9 +111,12 @@ func bench() {
 }
 
 func load() {
+    config.ContraDBURL = "postgres://contradbmgr:contradbmgr@127.0.0.1/contradb"
+    contradb.Setup()
+
     // Generate rules
     begin := time.Now()
-    rules, distinct := rulegen.GenFromURLs(ticked)
+    rules, distinct := rule.GenFromURLs(ticked)
     end := time.Now()
 
     kept := len(rules)
@@ -121,7 +126,7 @@ func load() {
 
     // Save to DB
     begin = time.Now()
-    rulegen.SaveRules(rules)
+    rule.SaveRules(rules)
     end = time.Now()
 
     fmt.Println("Rules saved in", end.Sub(begin))

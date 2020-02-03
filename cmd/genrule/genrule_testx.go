@@ -5,7 +5,7 @@ import (
     "testing"
     "time"
 
-    "github.com/ajruckman/ContraCore/internal/rulegen"
+    "github.com/ajruckman/ContraCore/internal/rule"
 )
 
 func BenchmarkDummyStart(b *testing.B) {
@@ -37,7 +37,7 @@ func BenchmarkDummyStart(b *testing.B) {
 //            contents = append(contents, strings.Repeat("-", 25))
 //        }
 //
-//        res, _ := rulegen.ProcessDomainSources(rulegen.BlockV4, contents)
+//        res, _ := rulegen.ProcessDomainSources(rulegen.block, contents)
 //        _ = began
 //        _ = res
 //        fmt.Println(len(res), time.Since(began))
@@ -62,7 +62,7 @@ func benchmarkProcessFromURLsWithPointers(b *testing.B) {
 
     //for i := 0; i < b.N; i++ {
         began := time.Now()
-        res, total := rulegen.GenFromURLs(urls)
+        res, total := rule.GenFromURLs(urls)
         _ = began
         _ = res
         fmt.Println("=>", total)
