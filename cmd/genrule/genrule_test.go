@@ -6,7 +6,7 @@ import (
     "testing"
     "time"
 
-    "github.com/ajruckman/ContraCore/internal/rulegen"
+    "github.com/ajruckman/ContraCore/internal/rule"
 )
 
 func BenchmarkGenRule(b *testing.B) {
@@ -20,7 +20,7 @@ func BenchmarkGenRule(b *testing.B) {
 
     for i := 0; i < b.N; i++ {
         begin := time.Now()
-        res, total := rulegen.GenFromURLs(urls)
+        res, total := rule.GenFromURLs(urls)
         end := time.Now()
 
         kept := len(res)

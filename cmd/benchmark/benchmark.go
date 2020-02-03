@@ -13,7 +13,7 @@ import (
 
     . "github.com/ajruckman/xlib"
 
-    "github.com/ajruckman/ContraCore/internal/rulegen"
+    "github.com/ajruckman/ContraCore/internal/rule"
 )
 
 var (
@@ -61,7 +61,7 @@ func init() {
 func main() {
 
     began := time.Now()
-    res, totalValid := rulegen.GenFromURLs(urls)
+    res, totalValid := rule.GenFromURLs(urls)
 
     fmt.Println()
     fmt.Println("Time: ", time.Since(began))
@@ -83,7 +83,7 @@ func main() {
 
         {
             rV4 := testing.Benchmark(benchmarkRuleGenV4)
-            fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
+            fmt.Println("block:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
         }
 
         //runtime.GC()
@@ -99,7 +99,7 @@ func main() {
 
         {
             rV4 := testing.Benchmark(benchmarkRuleGenV4)
-            fmt.Println("BlockV4:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
+            fmt.Println("block:", rV4.T.Milliseconds(), rV4.String()+" -> "+rV4.MemString())
         }
 
         //runtime.GC()
@@ -126,7 +126,7 @@ func main() {
 //}
 
 func benchmarkRuleGenV4(b *testing.B) {
-    benchmarkRuleGen(rulegen.BlockV4, b, "v4")
+    benchmarkRuleGen(b, "v4")
 }
 
 //func benchmarkRuleGenV5(b *testing.B) {
@@ -138,13 +138,13 @@ const expect = 817906
 
 var good []string
 
-func benchmarkRuleGen(evaluator func(*rulegen.Node, string, []string), b *testing.B, name string) {
+func benchmarkRuleGen(b *testing.B, name string) {
     b.ReportAllocs()
     b.SetBytes(contentTotals * numBench)
 
     //for n := 0; n < b.N; n++ {
     for n := 0; n < numBench; n++ {
-        res, _ := rulegen.GenFromURLs(urls)
+        res, _ := rule.GenFromURLs(urls)
         if len(res) != expect {
             fmt.Println(len(res), name)
 

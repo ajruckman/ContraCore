@@ -24,7 +24,6 @@ func main() {
             }
         }
         Err(err)
-        defer conn.Close()
 
         fmt.Println("connected.")
 
@@ -33,8 +32,10 @@ func main() {
             if err != nil {
                 if err == io.EOF {
                     fmt.Println("Server stopped.")
+                    conn.Close()
                     break
                 } else {
+                    conn.Close()
                     Err(err)
                 }
             }

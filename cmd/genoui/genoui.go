@@ -1,7 +1,7 @@
 package main
 
 import (
-    "github.com/ajruckman/ContraCore/internal/ouigen"
+    "github.com/ajruckman/ContraCore/internal/db/contradb/ouigen"
 )
 
 func main() {

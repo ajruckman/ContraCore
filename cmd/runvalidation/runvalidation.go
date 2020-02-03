@@ -4,11 +4,12 @@ import (
     "fmt"
     "time"
 
-    . "github.com/ajruckman/xlib"
+    "github.com/ajruckman/xlib"
     "github.com/miekg/dns"
 
-    "github.com/ajruckman/ContraCore/internal/db"
-    "github.com/ajruckman/ContraCore/internal/schema/contradb"
+    "github.com/ajruckman/ContraCore/internal/config"
+    "github.com/ajruckman/ContraCore/internal/db/contradb"
+    "github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
 )
 
 /*
@@ -20,9 +21,12 @@ Classes 0-2: 713500   / 938306   | Average request time (ms): 0.449        | div
 func main() {
     c := new(dns.Client)
 
-    var rules []contradb.Rule
-    err := db.XDB.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule`)
-    Err(err)
+    config.ContraDBURL = "postgres://contradbmgr:contradbmgr@127.0.0.1/contradb"
+    contradb.Setup()
+
+    var rules []dbschema.Rule
+    err := contradb.XDB.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule ORDER BY random()`)
+    xlib.Err(err)
 
     var total int64 = 0
     var count = 0
@@ -36,7 +40,7 @@ func main() {
 
         began := time.Now()
         r, _, err := c.Exchange(m, "127.0.0.1:5300")
-        Err(err)
+        xlib.Err(err)
         dur := time.Since(began)
 
         total += dur.Milliseconds()
