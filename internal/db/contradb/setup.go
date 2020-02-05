@@ -1,38 +1,46 @@
 package contradb
 
 import (
-    "fmt"
+    "net/url"
 
     "github.com/jackc/pgx/v4"
     "github.com/jackc/pgx/v4/stdlib"
     "github.com/jmoiron/sqlx"
 
     "github.com/ajruckman/ContraCore/internal/config"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var (
-    PDB *pgx.Conn
-    XDB *sqlx.DB
+    pdb *pgx.Conn
+    xdb *sqlx.DB
 )
 
 func Setup() {
+    readConfig()
+
     var err error
+    var dbURL *url.URL
 
-    fmt.Println("ContraDB URL: ", config.ContraDBURL)
-
-    XDB, err = sqlx.Connect("pgx", config.ContraDBURL)
+    dbURL, err = dbURL.Parse(config.ContraDBURL)
     if err != nil {
-        state.Console.Errorf("could not connect to PostgreSQL database server")
+        system.Console.Errorf("invalid ContraCore database URL")
+        panic(err)
+    }
+    system.Console.Info("ContraDB address:  ", dbURL.Host+":"+dbURL.Port())
+
+    xdb, err = sqlx.Connect("pgx", config.ContraDBURL)
+    if err != nil {
+        system.Console.Errorf("could not connect to PostgreSQL database server")
         panic(err)
     } else {
-        state.PostgresOnline.Store(true)
+        system.PostgresOnline.Store(true)
     }
 
-    if state.PostgresOnline.Load() {
-        PDB, err = stdlib.AcquireConn(XDB.DB)
+    if system.PostgresOnline.Load() {
+        pdb, err = stdlib.AcquireConn(xdb.DB)
         if err != nil {
-            state.Console.Error("could not acquire SQLX connection")
+            system.Console.Error("could not acquire SQLX connection")
             panic(err)
         }
     }

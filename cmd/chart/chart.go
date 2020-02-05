@@ -25,7 +25,7 @@ func main() {
 
 func series(w http.ResponseWriter, r *http.Request) {
     var res []contralog.QuestionCountsPerHour
-    err := contradb.XDB.Select(&res, `
+    err := contradb.Select(&res, `
 
 SELECT ts_round(time, 3600)
     AS hour,

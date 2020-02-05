@@ -11,7 +11,7 @@ import (
 
     "github.com/ajruckman/ContraCore/internal/db/contradb"
     "github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var (
@@ -65,7 +65,7 @@ func dhcpRefreshWorker() {
     for range time.Tick(dhcpRefreshInterval) {
         began := time.Now()
         ipsSeen, hostnamesSeen := cacheDHCP()
-        state.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
+        system.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
     }
 }
 
@@ -100,25 +100,25 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
         for _, lease := range v {
             if lease.IP.To4() != nil {
                 if q._question.Qtype == dns.TypeA {
-                    state.Console.Debug("lease IP is IPv4, question is A")
+                    system.Console.Debug("lease IP is IPv4, question is A")
                     //q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
                     m = genResponse(q.r, q._question.Qtype, lease.IP.To4().String())
                     err = q.respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
-                    state.Console.Debug("lease IP is IPv4, question is AAAA")
+                    system.Console.Debug("lease IP is IPv4, question is AAAA")
                     continue
                 }
 
             } else if lease.IP.To16() != nil {
                 if q._question.Qtype == dns.TypeAAAA {
-                    state.Console.Debug("lease IP is IPv6, question is AAAA")
+                    system.Console.Debug("lease IP is IPv6, question is AAAA")
                     //q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
                     m = genResponse(q.r, q._question.Qtype, lease.IP.To16().String())
                     err = q.respond(m)
                     return true, dns.RcodeSuccess, err
                 } else {
-                    state.Console.Debug("lease IP is IPv6, question is A")
+                    system.Console.Debug("lease IP is IPv6, question is A")
                     continue
                 }
             }

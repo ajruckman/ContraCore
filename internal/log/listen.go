@@ -1,13 +1,13 @@
 package log
 
 import (
-    "fmt"
     "net"
 
     . "github.com/ajruckman/xlib"
 
     "github.com/ajruckman/ContraCore/internal/log/eventserver"
     "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 func listen() {
@@ -18,7 +18,7 @@ func listen() {
         conn, err := ln.Accept()
         Err(err)
 
-        fmt.Println("New client:", conn.RemoteAddr().String())
+        system.Console.Info("New client:", conn.RemoteAddr().String())
 
         queryBufferLock.Lock()
         buffer := make([]schema.Log, len(queryBuffer))

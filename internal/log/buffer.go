@@ -6,7 +6,7 @@ import (
 
     "github.com/ajruckman/ContraCore/internal/log/contralog"
     "github.com/ajruckman/ContraCore/internal/schema"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var (
@@ -26,7 +26,7 @@ func enqueue(log schema.Log) {
     queryBuffer = append(queryBuffer, log)
 
     if len(queryBuffer) >= queryBufferSaveThreshold {
-        state.Console.Infof("log buffer contains %d queries (more than threshold %d); flushing to database immediately", len(queryBuffer), queryBufferSaveThreshold)
+        system.Console.Infof("log buffer contains %d queries (more than threshold %d); flushing to database immediately", len(queryBuffer), queryBufferSaveThreshold)
         contralog.SaveQueryLogBuffer(queryBuffer)
         queryBuffer = []schema.Log{}
     }
@@ -43,7 +43,7 @@ func queryBufferDebouncer() {
             return
         }
 
-        state.Console.Infof("timer expired and log buffer contains %d queries; flushing to database", len(queryBuffer))
+        system.Console.Infof("timer expired and log buffer contains %d queries; flushing to database", len(queryBuffer))
 
         contralog.SaveQueryLogBuffer(queryBuffer)
         queryBuffer = []schema.Log{}

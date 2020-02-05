@@ -7,7 +7,7 @@ import (
 
     "github.com/ajruckman/ContraCore/internal/db/contralog"
     "github.com/ajruckman/ContraCore/internal/schema"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 //func QueryLogWorker() {
@@ -85,11 +85,11 @@ func SaveQueryLogBuffer(buffer []schema.Log) {
         err     error
     )
 
-    if state.ClickHouseOnline.Load() {
+    if system.ClickHouseOnline.Load() {
         cdbTX, cdbSTMT, err = contralog.BeginBatch()
         if err != nil {
-            state.Console.Warningf("could not begin CDB transaction")
-            state.Console.Warning(err.Error())
+            system.Console.Warningf("could not begin cdb transaction")
+            system.Console.Warning(err.Error())
         }
     }
 
@@ -98,8 +98,8 @@ func SaveQueryLogBuffer(buffer []schema.Log) {
         if cdbTX != nil {
             err = contralog.SaveLog(cdbSTMT, v.ToContraLog())
             if err != nil {
-                state.Console.Warningf("could not insert secondary log for query '%s'", v.Question)
-                state.Console.Warning(err.Error())
+                system.Console.Warningf("could not insert secondary log for query '%s'", v.Question)
+                system.Console.Warning(err.Error())
             }
         }
     }

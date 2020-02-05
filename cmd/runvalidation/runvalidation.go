@@ -25,7 +25,7 @@ func main() {
     contradb.Setup()
 
     var rules []dbschema.Rule
-    err := contradb.XDB.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule ORDER BY random()`)
+    err := contradb.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule ORDER BY random()`)
     xlib.Err(err)
 
     var total int64 = 0

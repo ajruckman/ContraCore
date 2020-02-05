@@ -2,7 +2,6 @@ package ouigen
 
 import (
     "bufio"
-    "context"
     "fmt"
     "net/http"
     "regexp"
@@ -17,7 +16,7 @@ import (
 var matchOUI = regexp.MustCompile(`^([A-z0-9]{2}-[A-z0-9]{2}-[A-z0-9]{2})\s+\(hex\)\s+(.*)$`)
 
 func GenOUI() {
-    _, err := contradb.XDB.Exec(`TRUNCATE TABLE oui;`)
+    _, err := contradb.Exec(`TRUNCATE TABLE oui;`)
     Err(err)
 
     var res [][]interface{}
@@ -40,6 +39,6 @@ func GenOUI() {
         }
     }
 
-    _, err = contradb.PDB.CopyFrom(context.Background(), pgx.Identifier{"oui"}, []string{"mac", "vendor"}, pgx.CopyFromRows(res))
+    _, err = contradb.CopyFrom(pgx.Identifier{"oui"}, []string{"mac", "vendor"}, pgx.CopyFromRows(res))
     Err(err)
 }

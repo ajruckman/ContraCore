@@ -5,7 +5,7 @@ import (
 
     "go.uber.org/atomic"
 
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var (
@@ -32,7 +32,7 @@ func statWorker() {
             avgDurPass = float64(PassedTotDuration.Swap(0).Milliseconds()) / float64(PassedTotCount.Swap(0))
         )
 
-        state.Console.Infof("Log buffer size: %d | New log rows: %d | Rows/second: %.3f | Avg. ms answered reqs.: %.2f | Avg. ms passed reqs.: %.2f",
+        system.Console.Infof("Log buffer size: %d | New log rows: %d | Rows/second: %.3f | Avg. ms answered reqs.: %.2f | Avg. ms passed reqs.: %.2f",
             queryLogBufferLen,
             c,
             float64(c)/monInterval.Seconds(),

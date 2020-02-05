@@ -1,4 +1,4 @@
-package state
+package system
 
 import (
     "go.uber.org/atomic"
@@ -7,4 +7,3 @@ import (
 var PostgresOnline atomic.Bool
 
 var ClickHouseOnline atomic.Bool
-

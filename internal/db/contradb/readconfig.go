@@ -2,18 +2,18 @@ package contradb
 
 import (
     "database/sql"
-    "fmt"
 
     . "github.com/ajruckman/xlib"
 
     "github.com/ajruckman/ContraCore/internal/config"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
-func ReadConfig() {
+func readConfig() {
     conf, err := GetConfig()
 
     if err == sql.ErrNoRows {
-        fmt.Println("Generating default config")
+        system.Console.Info("Generating default ContraDB config")
 
         InsertDefaultConfig()
         conf, err = GetConfig()
@@ -46,6 +46,6 @@ func ReadConfig() {
 }
 
 func InsertDefaultConfig() {
-    _, err := XDB.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
+    _, err := xdb.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
     Err(err)
 }
