@@ -2,13 +2,13 @@ package eventserver
 
 import (
     "encoding/json"
-    "fmt"
     "net"
     "time"
 
     . "github.com/ajruckman/xlib"
 
     "github.com/ajruckman/ContraCore/internal/schema"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var (
@@ -33,7 +33,7 @@ func Onboard(conn net.Conn, buffer []schema.Log) {
         _, err := conn.Write(content)
         if err != nil {
             if _, ok := err.(*net.OpError); ok {
-                fmt.Println("Deleting disconnected client:", conn.RemoteAddr().String())
+                system.Console.Info("Deleting disconnected client:", conn.RemoteAddr().String())
                 delete(clients, conn.RemoteAddr().String())
             } else {
                 Err(err)
@@ -88,7 +88,7 @@ func transmitWorker() {
 
             if err != nil {
                 if _, ok := err.(*net.OpError); ok {
-                    fmt.Println("Deleting disconnected client:", conn.RemoteAddr().String())
+                    system.Console.Info("Deleting disconnected client:", conn.RemoteAddr().String())
                     delete(clients, conn.RemoteAddr().String())
                 } else {
                     Err(err)

@@ -22,7 +22,7 @@ func main() {
 }
 
 func logNewEntry(op, mac, ip, hostname string) {
-    _, err := contradb.XDB.Exec(`
+    _, err := contradb.Exec(`
 
 INSERT INTO lease (source, op, ip, mac, hostname, vendor)
 SELECT values.*, o.vendor

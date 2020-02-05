@@ -9,7 +9,7 @@ import (
 )
 
 func BeginBatch() (tx *sql.Tx, stmt *sql.Stmt, err error) {
-    tx, err = CDB.Begin()
+    tx, err = cdb.Begin()
     if err != nil {
         return nil, nil, err
     }

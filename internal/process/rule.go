@@ -1,7 +1,6 @@
 package process
 
 import (
-    "fmt"
     "regexp"
     "strings"
     "sync"
@@ -12,7 +11,7 @@ import (
     "github.com/ajruckman/ContraCore/internal/db/contradb"
     "github.com/ajruckman/ContraCore/internal/functions"
     "github.com/ajruckman/ContraCore/internal/log"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 type ruleTree struct {
@@ -52,7 +51,7 @@ func (r *ruleTree) check(domain string) bool {
             }
         }
         if log.LogDurations {
-            state.Console.Debugf("%v: 2 > %v", domain, time.Since(began))
+            system.Console.Debugf("%v: 2 > %v", domain, time.Since(began))
         }
 
         fallthrough
@@ -67,7 +66,7 @@ func (r *ruleTree) check(domain string) bool {
             }
         }
         if log.LogDurations {
-            state.Console.Debugf("%v: 1 > %v", domain, time.Since(began))
+            system.Console.Debugf("%v: 1 > %v", domain, time.Since(began))
         }
 
         fallthrough
@@ -80,7 +79,7 @@ func (r *ruleTree) check(domain string) bool {
             }
         }
         if log.LogDurations {
-            state.Console.Debugf("%v: 0 > %v", domain, time.Since(began))
+            system.Console.Debugf("%v: 0 > %v", domain, time.Since(began))
         }
     }
 
@@ -101,7 +100,7 @@ func readRules() {
 
     for i, rule := range rules {
         if i%10000 == 0 {
-            fmt.Printf("Caching rule %d of %d\n", i, l)
+            system.Console.Infof("Caching rule %d of %d", i, l)
         }
 
         switch rule.Class {
@@ -128,7 +127,7 @@ func readRules() {
         }
     }
 
-    state.Console.Infof("%d rules compiled and stored in %v", len(rules), time.Since(began))
+    system.Console.Infof("%d rules compiled and stored in %v", len(rules), time.Since(began))
 
     ruleCache.lock.Unlock()
 }

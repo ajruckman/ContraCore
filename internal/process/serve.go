@@ -11,7 +11,7 @@ import (
 
     "github.com/ajruckman/ContraCore/internal/config"
     "github.com/ajruckman/ContraCore/internal/functions"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWriter, r *dns.Msg) (int, error) {
@@ -44,7 +44,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         q.vendor = lease.Vendor
     }
 
-    state.Console.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._question.Qtype])
+    system.Console.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._question.Qtype])
 
     if strings.Count(q._domain, ".") == 0 {
         if ret, rcode, err := respondByHostname(&q); ret {
@@ -57,7 +57,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
     }
 
     if q.hostname != nil && strings.ToLower(*q.hostname) == "syd-laptop" {
-        state.Console.Infof("This is Syd's laptop; skipping respondWithBlock")
+        system.Console.Infof("This is Syd's laptop; skipping respondWithBlock")
         goto skip
     }
     if ret, rcode, err := respondWithBlock(&q); ret {
@@ -71,7 +71,7 @@ skip:
             goto next
         }
 
-        state.Console.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
+        system.Console.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
         m := responseWithCode(r, dns.RcodeServerFailure)
         err := q.respond(m)
         return dns.RcodeServerFailure, err

@@ -2,7 +2,6 @@ package rule
 
 import (
     "bufio"
-    "context"
     "fmt"
     "net/http"
     "strings"
@@ -98,7 +97,7 @@ const naiveMode = false
 func SaveRules(res []string) {
     rulesIn = make(chan [][]interface{})
 
-    _, err := contradb.XDB.Exec(`TRUNCATE TABLE rule;`)
+    _, err := contradb.Exec(`TRUNCATE TABLE rule;`)
     Err(err)
 
     saveWG.Add(1)
@@ -159,7 +158,7 @@ func SaveRules(res []string) {
 
 func dbSaveWorker() {
     for set := range rulesIn {
-        _, err := contradb.PDB.CopyFrom(context.Background(), pgx.Identifier{"rule"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
+        _, err := contradb.CopyFrom(pgx.Identifier{"rule"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
         Err(err)
     }
 

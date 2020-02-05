@@ -3,7 +3,7 @@ package log
 import (
     "github.com/ajruckman/ContraCore/internal/log/eventserver"
     "github.com/ajruckman/ContraCore/internal/schema"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 var queryChannel = make(chan schema.Log)
@@ -24,7 +24,7 @@ func Query(log schema.Log) {
     case queryChannel <- log:
         break
     default:
-        state.Console.Warningf("couldn't immediately push to queryChannel: %s", log.Question)
+        system.Console.Warningf("couldn't immediately push to queryChannel: %s", log.Question)
         queryChannel <- log
     }
 }

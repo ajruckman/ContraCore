@@ -4,7 +4,7 @@ import (
     "github.com/miekg/dns"
 
     "github.com/ajruckman/ContraCore/internal/config"
-    "github.com/ajruckman/ContraCore/internal/state"
+    "github.com/ajruckman/ContraCore/internal/system"
 )
 
 func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
@@ -30,7 +30,7 @@ func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
             v = config.SpoofedDefault
         }
 
-        state.Console.Infof("Blocking query '%s' with value '%s'", q._domain, v)
+        system.Console.Infof("Blocking query '%s' with value '%s'", q._domain, v)
 
         m = genResponse(q.r, q._question.Qtype, v)
         err = q.respond(m)

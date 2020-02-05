@@ -1,4 +1,4 @@
-package state
+package system
 
 import (
     "github.com/coredns/coredns/plugin/pkg/log"
