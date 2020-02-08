@@ -8,8 +8,8 @@ import `github.com/ajruckman/ContraCore/internal/system`
 
 func Setup() {
     clog := log.NewWithPlugin(`ContraCore`)
-    if !system.PostgresOnline.Load() {
-        clog.Warning(`not connected to PostgreSQL; not provisioning database`)
+    if !system.ContraDBOnline.Load() {
+        clog.Warning(`ContraDB is not connected; not provisioning database`)
         return
     }
     clog.Info(`Provisioning database`)

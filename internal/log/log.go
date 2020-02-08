@@ -1,12 +1,23 @@
 package log
 
 import (
+    "go.uber.org/atomic"
+
     "github.com/ajruckman/ContraCore/internal/log/eventserver"
     "github.com/ajruckman/ContraCore/internal/schema"
     "github.com/ajruckman/ContraCore/internal/system"
 )
 
-var queryChannel = make(chan schema.Log)
+var (
+    AnsweredTotDuration atomic.Duration
+    AnsweredTotCount    atomic.Uint32
+    PassedTotDuration   atomic.Duration
+    PassedTotCount      atomic.Uint32
+
+    LogDurations = true
+
+    queryChannel = make(chan schema.Log)
+)
 
 func Query(log schema.Log) {
     monAnyNew.Store(true)

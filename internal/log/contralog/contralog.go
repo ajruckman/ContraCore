@@ -2,6 +2,7 @@ package contralog
 
 import (
     "database/sql"
+    "fmt"
 
     . "github.com/ajruckman/xlib"
 
@@ -78,6 +79,8 @@ import (
 //}
 
 func SaveQueryLogBuffer(buffer []schema.Log) {
+
+    fmt.Println("!!")
     // Create transactions
     var (
         cdbTX   *sql.Tx
@@ -85,11 +88,12 @@ func SaveQueryLogBuffer(buffer []schema.Log) {
         err     error
     )
 
-    if system.ClickHouseOnline.Load() {
+    if system.ContraLogOnline.Load() {
         cdbTX, cdbSTMT, err = contralog.BeginBatch()
         if err != nil {
-            system.Console.Warningf("could not begin cdb transaction")
-            system.Console.Warning(err.Error())
+            system.Console.Error("failed to begin cdb transaction with error:")
+            system.Console.Error(err.Error())
+            return
         }
     }
 
@@ -98,8 +102,8 @@ func SaveQueryLogBuffer(buffer []schema.Log) {
         if cdbTX != nil {
             err = contralog.SaveLog(cdbSTMT, v.ToContraLog())
             if err != nil {
-                system.Console.Warningf("could not insert secondary log for query '%s'", v.Question)
-                system.Console.Warning(err.Error())
+                system.Console.Errorf("failed to insert log for query '%s' with error:", v.Question)
+                system.Console.Error(err.Error())
             }
         }
     }

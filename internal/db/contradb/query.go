@@ -15,32 +15,39 @@ import (
 )
 
 func GetLeaseDetails() (res []contradbschema.LeaseDetails, err error) {
-    if system.PostgresOnline.Load() {
-        var rows *sqlx.Rows
+    if !system.ContraDBOnline.Load() {
+        return nil, &ErrContraDBOffline{}
+    }
 
-        rows, err = xdb.Queryx(`SELECT time, op, ip, mac, hostname, vendor FROM lease_details;`)
+    var rows *sqlx.Rows
+
+    rows, err = xdb.Queryx(`SELECT time, op, ip, mac, hostname, vendor FROM lease_details;`)
+    if err != nil {
+        return nil, errOfflineOrOriginal(err)
+    }
+
+    defer func() {
+        err = rows.Close()
         if err != nil {
-            return
+            err = errOfflineOrOriginal(err)
+        }
+    }()
+
+    for rows.Next() {
+        var n = _leaseDetails{}
+        err = rows.StructScan(&n)
+        if err != nil {
+            return nil, err
         }
 
-        defer rows.Close()
-
-        for rows.Next() {
-            var n = _leaseDetails{}
-            err = rows.StructScan(&n)
-            if err != nil {
-                return
-            }
-
-            res = append(res, contradbschema.LeaseDetails{
-                Time:     n.Time,
-                Op:       n.Op,
-                IP:       n.IP.IPNet.IP,
-                MAC:      n.MAC.Addr,
-                Hostname: n.Hostname,
-                Vendor:   n.Vendor,
-            })
-        }
+        res = append(res, contradbschema.LeaseDetails{
+            Time:     n.Time,
+            Op:       n.Op,
+            IP:       n.IP.IPNet.IP,
+            MAC:      n.MAC.Addr,
+            Hostname: n.Hostname,
+            Vendor:   n.Vendor,
+        })
     }
 
     return
@@ -56,24 +63,30 @@ type _leaseDetails struct {
 }
 
 func GetOUI() (res []contradbschema.OUI, err error) {
-    if system.PostgresOnline.Load() {
-        err = xdb.Select(&res, `SELECT * FROM oui;`)
+    if !system.ContraDBOnline.Load() {
+        return nil, &ErrContraDBOffline{}
     }
-    return
+
+    err = xdb.Select(&res, `SELECT * FROM oui;`)
+    return res, errOfflineOrOriginal(err)
 }
 
 func GetConfig() (res contradbschema.Config, err error) {
-    if system.PostgresOnline.Load() {
-        err = xdb.Get(&res, `SELECT * FROM config ORDER BY id DESC LIMIT 1`)
+    if !system.ContraDBOnline.Load() {
+        return res, &ErrContraDBOffline{}
     }
-    return
+
+    err = xdb.Get(&res, `SELECT * FROM config ORDER BY id DESC LIMIT 1`)
+    return res, errOfflineOrOriginal(err)
 }
 
 func GetRules() (res []contradbschema.Rule, err error) {
-    if system.PostgresOnline.Load() {
-        err = xdb.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
+    if !system.ContraDBOnline.Load() {
+        return nil, &ErrContraDBOffline{}
     }
-    return
+
+    err = xdb.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
+    return res, errOfflineOrOriginal(err)
 }
 
 func GetHourly() (res []contralogschema.LogCountPerHour, err error) {
@@ -81,14 +94,34 @@ func GetHourly() (res []contralogschema.LogCountPerHour, err error) {
     return
 }
 
-func Exec(query string, args ...interface{}) (pgconn.CommandTag, error) {
-    return pdb.Exec(context.Background(), query, args...)
+func Exec(query string, args ...interface{}) (cmd pgconn.CommandTag, err error) {
+    if !system.ContraDBOnline.Load() {
+        return cmd, &ErrContraDBOffline{}
+    }
+
+    cmd, err = pdb.Exec(context.Background(), query, args...)
+    return cmd, errOfflineOrOriginal(err)
 }
 
-func CopyFrom(tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (int64, error) {
-    return pdb.CopyFrom(context.Background(), tableName, columnNames, rowSrc)
+func CopyFrom(tableName pgx.Identifier, columnNames []string, rowSrc pgx.CopyFromSource) (numRows int64, err error) {
+    if !system.ContraDBOnline.Load() {
+        return 0, &ErrContraDBOffline{}
+    }
+
+    numRows, err = pdb.CopyFrom(context.Background(), tableName, columnNames, rowSrc)
+    return numRows, errOfflineOrOriginal(err)
 }
 
-func Select(dest interface{}, query string, args ...interface{}) error {
-    return xdb.Select(dest, query, args...)
+func Select(dest interface{}, query string, args ...interface{}) (err error) {
+    if !system.ContraDBOnline.Load() {
+        return &ErrContraDBOffline{}
+    }
+
+    err = xdb.Select(dest, query, args...)
+    return errOfflineOrOriginal(err)
+}
+
+func insertDefaultConfig() (err error) {
+    _, err = xdb.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
+    return errOfflineOrOriginal(err)
 }

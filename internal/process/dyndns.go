@@ -8,6 +8,7 @@ import (
 
     . "github.com/ajruckman/xlib"
     "github.com/miekg/dns"
+    "go.uber.org/atomic"
 
     "github.com/ajruckman/ContraCore/internal/db/contradb"
     "github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
@@ -21,11 +22,14 @@ var (
     dhcpIPToLeaseLock        sync.Mutex
 
     dhcpRefreshInterval = time.Second * 15
+    dhcpRefreshFailed   atomic.Bool
 )
 
-func cacheDHCP() (ipsSeen, hostnamesSeen int) {
+func cacheDHCP() (ipsSeen, hostnamesSeen int, err error) {
     leases, err := contradb.GetLeaseDetails()
-    Err(err)
+    if err != nil {
+        return
+    }
 
     dhcpHostnameToLeasesLock.Lock()
     dhcpIPToLeaseLock.Lock()
@@ -64,8 +68,18 @@ func cacheDHCP() (ipsSeen, hostnamesSeen int) {
 func dhcpRefreshWorker() {
     for range time.Tick(dhcpRefreshInterval) {
         began := time.Now()
-        ipsSeen, hostnamesSeen := cacheDHCP()
-        system.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
+        ipsSeen, hostnamesSeen, err := cacheDHCP()
+        if _, ok := err.(*contradb.ErrContraDBOffline); ok {
+            if !dhcpRefreshFailed.Load() {
+                system.Console.Warning("failed to refresh lease cache because ContraDB is not connected")
+                dhcpRefreshFailed.Store(true)
+            }
+        } else if err != nil {
+            Err(err)
+        } else {
+            system.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
+            dhcpRefreshFailed.Store(false)
+        }
     }
 }
 

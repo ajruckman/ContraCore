@@ -4,6 +4,7 @@ import (
     "go.uber.org/atomic"
 )
 
-var PostgresOnline atomic.Bool
-
-var ClickHouseOnline atomic.Bool
+var (
+    ContraDBOnline  atomic.Bool
+    ContraLogOnline atomic.Bool
+)

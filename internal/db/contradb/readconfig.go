@@ -3,11 +3,13 @@ package contradb
 import (
     "database/sql"
 
-    . "github.com/ajruckman/xlib"
+    "go.uber.org/atomic"
 
     "github.com/ajruckman/ContraCore/internal/config"
     "github.com/ajruckman/ContraCore/internal/system"
 )
+
+var configLoaded = atomic.Bool{}
 
 func readConfig() {
     conf, err := GetConfig()
@@ -15,11 +17,27 @@ func readConfig() {
     if err == sql.ErrNoRows {
         system.Console.Info("Generating default ContraDB config")
 
-        InsertDefaultConfig()
+        err = insertDefaultConfig()
+        if err != nil {
+            system.Console.Error("failed to save default config to ContraDB; loading hardcoded config")
+            system.Console.Error(err.Error())
+            loadOfflineConfig()
+            return
+        }
+
         conf, err = GetConfig()
-        Err(err)
+        if err != nil {
+            system.Console.Error("failed to load saved default config from ContraDB; loading hardcoded config")
+            system.Console.Error(err.Error())
+            loadOfflineConfig()
+            return
+        }
+
     } else if err != nil {
-        Err(err)
+        system.Console.Warning("failed to load default config from ContraDB; loading hardcoded config")
+        system.Console.Warning(err.Error())
+        loadOfflineConfig()
+        return
     }
 
     //
@@ -43,9 +61,18 @@ func readConfig() {
     config.SpoofedAAAA = conf.SpoofedAAAA
     config.SpoofedCNAME = conf.SpoofedCNAME
     config.SpoofedDefault = conf.SpoofedDefault
+
+    configLoaded.Store(true)
+
+    system.Console.Info("loaded config from ContraDB")
 }
 
-func InsertDefaultConfig() {
-    _, err := xdb.Exec(`INSERT INTO config (search_domains) VALUES(default);`)
-    Err(err)
+func loadOfflineConfig() {
+    config.RuleSources = []string{}
+    config.SearchDomains = []string{}
+    config.DomainNeeded = true
+    config.SpoofedA = "0.0.0.0"
+    config.SpoofedAAAA = "::0"
+    config.SpoofedCNAME = ""
+    config.SpoofedDefault = "-"
 }

@@ -6,8 +6,6 @@ import (
     "sync"
     "time"
 
-    . "github.com/ajruckman/xlib"
-
     "github.com/ajruckman/ContraCore/internal/db/contradb"
     "github.com/ajruckman/ContraCore/internal/functions"
     "github.com/ajruckman/ContraCore/internal/log"
@@ -88,7 +86,14 @@ func (r *ruleTree) check(domain string) bool {
 
 func readRules() {
     rules, err := contradb.GetRules()
-    Err(err)
+    if _, ok := err.(*contradb.ErrContraDBOffline); ok {
+        system.Console.Warning("not loading rules because ContraDB is not connected")
+        return
+    } else if err != nil {
+        system.Console.Error("failed to load rules from ContraDB with error:")
+        system.Console.Error(err.Error())
+        return
+    }
 
     ruleCache.lock.Lock()
 

@@ -1,7 +1,7 @@
 .:5300 {
     contracore {
         ContraDBURL  postgres://contradbmgr:contradbmgr@127.0.0.1/contradb
-        ContraLogURL tcp://10.3.0.16:9000?username=contralogmgr&password=contralogmgr&database=contralog
+        ContraLogURL tcp://10.3.1.18:9000?username=contralogmgr&password=contralogmgr&database=contralog
     }
 
     #forward . tls://1.1.1.1 tls://1.0.0.1 {
