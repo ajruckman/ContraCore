@@ -6,7 +6,7 @@ import (
 
 func Setup() {
     go listen()
-    go queryBufferDebouncer()
+    go queryBufferFlushScheduled()
     go statWorker()
     go inputMonitor()
 

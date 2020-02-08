@@ -13,16 +13,15 @@ var (
     queryBuffer     []schema.Log
     queryBufferLock sync.Mutex
 
-    queryBufferSaveThreshold = 1                // Save all in buffer if the buffer contains this many queries
+    queryBufferSaveThreshold = 100              // Save all in buffer if the buffer contains this many queries
     queryBufferSaveInterval  = time.Second * 30 // Save all in buffer if no new logs have been added after this time
 
-    queryBufferMonitorTimer = time.NewTimer(queryBufferSaveInterval)
+    queryBufferFlushTicker = time.NewTicker(queryBufferSaveInterval)
 )
 
 func enqueue(log schema.Log) {
     queryBufferLock.Lock()
 
-    queryBufferMonitorTimer.Reset(queryBufferSaveInterval)
     queryBuffer = append(queryBuffer, log)
 
     if len(queryBuffer) >= queryBufferSaveThreshold {
@@ -38,8 +37,8 @@ func enqueue(log schema.Log) {
     queryBufferLock.Unlock()
 }
 
-func queryBufferDebouncer() {
-    for range queryBufferMonitorTimer.C {
+func queryBufferFlushScheduled() {
+    for range queryBufferFlushTicker.C {
         queryBufferLock.Lock()
 
         if len(queryBuffer) == 0 {
@@ -48,10 +47,10 @@ func queryBufferDebouncer() {
         }
 
         if system.ContraLogOnline.Load() {
-            system.Console.Infof("timer expired and log buffer contains %d queries; flushing to database", len(queryBuffer))
+            system.Console.Infof("log buffer timer expired and log buffer contains %d queries; flushing to database", len(queryBuffer))
             contralog.SaveQueryLogBuffer(queryBuffer)
         } else {
-            system.Console.Infof("timer expired and log buffer contains %d queries, but ContraLog is not connected; clearing buffer", len(queryBuffer))
+            system.Console.Infof("log buffer timer expired and log buffer contains %d queries, but ContraLog is not connected; clearing buffer", len(queryBuffer))
         }
 
         queryBuffer = []schema.Log{}
