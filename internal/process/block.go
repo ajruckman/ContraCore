@@ -9,7 +9,7 @@ import (
 
 func respondWithBlock(q *queryContext) (ret bool, rcode int, err error) {
     if ruleCache.check(q._domain) {
-        //q.Action = "block"
+        q.action = ActionBlock
         var m *dns.Msg
         var v string
 

@@ -14,7 +14,7 @@ var (
     queryBufferLock sync.Mutex
 
     queryBufferSaveThreshold = 100              // Save all in buffer if the buffer contains this many queries
-    queryBufferSaveInterval  = time.Second * 30 // Save all in buffer if no new logs have been added after this time
+    queryBufferSaveInterval  = time.Second * 3 // Save all in buffer if no new logs have been added after this time
 
     queryBufferFlushTicker = time.NewTicker(queryBufferSaveInterval)
 )
@@ -43,7 +43,7 @@ func queryBufferFlushScheduled() {
 
         if len(queryBuffer) == 0 {
             queryBufferLock.Unlock()
-            return
+            continue
         }
 
         if system.ContraLogOnline.Load() {

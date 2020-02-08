@@ -1,6 +1,8 @@
 package log
 
 import (
+    "strings"
+
     "go.uber.org/atomic"
 
     "github.com/ajruckman/ContraCore/internal/log/eventserver"
@@ -23,7 +25,7 @@ func Query(log schema.Log) {
     monAnyNew.Store(true)
     monCount.Add(1)
 
-    if log.Action == "pass" {
+    if strings.HasPrefix(log.Action, "pass.") {
         PassedTotCount.Inc()
         PassedTotDuration.Add(log.Duration)
     } else {

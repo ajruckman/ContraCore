@@ -46,11 +46,12 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
 
     system.Console.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._question.Qtype])
 
-    if strings.Count(q._domain, ".") == 0 {
+    //if strings.Count(q._domain, ".") == 0 {
+        // Always check this; queries with search domains will contain periods
         if ret, rcode, err := respondByHostname(&q); ret {
             return rcode, err
         }
-    }
+    //}
 
     if ret, rcode, err := respondByPTR(&q); ret {
         return rcode, err
@@ -65,6 +66,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
     }
 skip:
 
+    // TODO: strip search domain to check DomainNeeded safely
     if config.DomainNeeded && strings.Count(q._domain, ".") == 0 {
         if q._question.Qtype == dns.TypeNS && q._domain == "" {
             // Permit looking up root servers
@@ -72,11 +74,13 @@ skip:
         }
 
         system.Console.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
+        q.action = ActionDomainNeeded
         m := responseWithCode(r, dns.RcodeServerFailure)
         err := q.respond(m)
         return dns.RcodeServerFailure, err
     }
 next:
 
+    q.action = ActionNotBlacklisted
     return plugin.NextOrFailure(name, next, ctx, q, r)
 }

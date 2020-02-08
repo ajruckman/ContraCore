@@ -115,6 +115,7 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
             if lease.IP.To4() != nil {
                 if q._question.Qtype == dns.TypeA {
                     system.Console.Debug("lease IP is IPv4, question is A")
+                    q.action = ActionDDNSHostname
                     //q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
                     m = genResponse(q.r, q._question.Qtype, lease.IP.To4().String())
                     err = q.respond(m)
@@ -127,6 +128,7 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
             } else if lease.IP.To16() != nil {
                 if q._question.Qtype == dns.TypeAAAA {
                     system.Console.Debug("lease IP is IPv6, question is AAAA")
+                    q.action = ActionDDNSHostname
                     //q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
                     m = genResponse(q.r, q._question.Qtype, lease.IP.To16().String())
                     err = q.respond(m)
@@ -167,6 +169,7 @@ func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
                 return
             }
 
+            q.action = ActionDDNSPTR
             //q.Action = "ddns-ptr"
 
             m := genResponse(q.r, q._question.Qtype, *v.Hostname)

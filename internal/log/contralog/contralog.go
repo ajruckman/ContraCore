@@ -2,7 +2,6 @@ package contralog
 
 import (
     "database/sql"
-    "fmt"
 
     . "github.com/ajruckman/xlib"
 
@@ -79,8 +78,6 @@ import (
 //}
 
 func SaveQueryLogBuffer(buffer []schema.Log) {
-
-    fmt.Println("!!")
     // Create transactions
     var (
         cdbTX   *sql.Tx

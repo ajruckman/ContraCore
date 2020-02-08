@@ -13,13 +13,15 @@ import (
     "github.com/ajruckman/ContraCore/internal/schema"
 )
 
-type action uint8
+type action string
 
 const (
-    ActionAllow action = iota
-    ActionRestrict
-    ActionPass
-    ActionBlock
+    ActionNotBlacklisted = "pass.notblacklisted"
+    ActionWhitelisted    = "pass.whitelisted"
+    ActionDomainNeeded   = "respond.domainneeded"
+    ActionBlock          = "respond.block"
+    ActionDDNSHostname   = "respond.ddnshostname"
+    ActionDDNSPTR        = "respond.ddnsptr"
 )
 
 type queryContext struct {
@@ -36,6 +38,7 @@ type queryContext struct {
     hostname *string
     vendor   *string
 
+    action  action
     answers []string
 }
 
@@ -53,7 +56,7 @@ func (q *queryContext) respond(res *dns.Msg) (err error) {
         Client:         q._client,
         Question:       q._domain,
         QuestionType:   dns.TypeToString[q._question.Qtype],
-        Action:         "-test-",
+        Action:         string(q.action),
         Answers:        q.answers,
         ClientMAC:      q.mac,
         ClientHostname: q.hostname,
