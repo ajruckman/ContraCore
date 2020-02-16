@@ -2,6 +2,7 @@ package contradb
 
 import (
     "context"
+    "net"
     "time"
 
     "github.com/jackc/pgconn"
@@ -10,7 +11,6 @@ import (
     "github.com/jmoiron/sqlx"
 
     contradbschema "github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
-    contralogschema "github.com/ajruckman/ContraCore/internal/db/contralog/dbschema"
     "github.com/ajruckman/ContraCore/internal/system"
 )
 
@@ -26,12 +26,14 @@ func GetLeaseDetails() (res []contradbschema.LeaseDetails, err error) {
         return nil, errOfflineOrOriginal(err)
     }
 
-    defer func() {
-        err = rows.Close()
-        if err != nil {
-            err = errOfflineOrOriginal(err)
-        }
-    }()
+    defer rows.Close()
+
+    //defer func() {
+    //    err = rows.Close()
+    //    if err != nil {
+    //        err = errOfflineOrOriginal(err)
+    //    }
+    //}()
 
     for rows.Next() {
         var n = _leaseDetails{}
@@ -80,19 +82,111 @@ func GetConfig() (res contradbschema.Config, err error) {
     return res, errOfflineOrOriginal(err)
 }
 
-func GetRules() (res []contradbschema.Rule, err error) {
+func GetBlacklistRules() (res []contradbschema.Blacklist, err error) {
     if !system.ContraDBOnline.Load() {
         return nil, &ErrContraDBOffline{}
     }
 
-    err = xdb.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule;`)
+    err = xdb.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM blacklist;`)
     return res, errOfflineOrOriginal(err)
 }
 
-func GetHourly() (res []contralogschema.LogCountPerHour, err error) {
-    //err = CDB.Select(&res, `SELECT * FROM log_count_per_hour;`)
+func GetWhitelistRules() (res []contradbschema.Whitelist, err error) {
+    if !system.ContraDBOnline.Load() {
+        return nil, &ErrContraDBOffline{}
+    }
+
+    var rows *sqlx.Rows
+
+    rows, err = xdb.Queryx(`SELECT * FROM whitelist;`)
+    if err != nil {
+        return nil, errOfflineOrOriginal(err)
+    }
+
+    defer rows.Close()
+
+    for rows.Next() {
+        var n = _whitelist{}
+        err = rows.StructScan(&n)
+        if err != nil {
+            return nil, errOfflineOrOriginal(err)
+        }
+
+        var expires *time.Time
+        if n.Expires != nil {
+            expires = &n.Expires.Time
+        }
+
+        var ips *[]net.IP
+        if n.IPs != nil {
+            ips = &[]net.IP{}
+            for _, ip := range n.IPs.Elements {
+                *ips = append(*ips, ip.IPNet.IP)
+            }
+        }
+
+        var subnets *[]net.IPNet
+        if n.Subnets != nil {
+            subnets = &[]net.IPNet{}
+            for _, subnet := range n.Subnets.Elements {
+                *subnets = append(*subnets, *subnet.IPNet)
+            }
+        }
+
+        var macs *[]net.HardwareAddr
+        if n.MACs != nil {
+            macs = &[]net.HardwareAddr{}
+            for _, mac := range n.MACs.Elements {
+                *macs = append(*macs, mac.Addr)
+            }
+        }
+
+        var vendors *[]string
+        if n.Vendors != nil {
+            vendors = &[]string{}
+            for _, vendor := range n.Vendors.Elements {
+                *vendors = append(*vendors, vendor.String)
+            }
+        }
+
+        var hostnames *[]string
+        if n.Hostnames != nil {
+            hostnames = &[]string{}
+            for _, hostname := range n.Hostnames.Elements {
+                *hostnames = append(*hostnames, hostname.String)
+            }
+        }
+
+        res = append(res, contradbschema.Whitelist{
+            ID:        n.ID,
+            Pattern:   n.Pattern,
+            Expires:   expires,
+            IPs:       ips,
+            Subnets:   subnets,
+            MACs:      macs,
+            Vendors:   vendors,
+            Hostnames: hostnames,
+        })
+    }
+
     return
 }
+
+type _whitelist struct {
+    ID        int                  `db:"id"`
+    Pattern   string               `db:"pattern"`
+    Expires   *pgtype.Timestamp    `db:"expires"`
+    IPs       *pgtype.InetArray    `db:"ips"`
+    Subnets   *pgtype.CIDRArray    `db:"subnets"`
+    MACs      *pgtype.MacaddrArray `db:"macs"`
+    Vendors   *pgtype.TextArray    `db:"vendors"`
+    Hostnames *pgtype.TextArray    `db:"hostnames"`
+}
+
+//func GetHourly() (res []contralogschema.LogCountPerHour, err error) {
+//    //err = CDB.Select(&res, `SELECT * FROM log_count_per_hour;`)
+//    return
+//}
 
 func Exec(query string, args ...interface{}) (cmd pgconn.CommandTag, err error) {
     if !system.ContraDBOnline.Load() {

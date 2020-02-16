@@ -11,6 +11,8 @@ import (
 )
 
 func listen() {
+    loadCache()
+
     ln, err := net.Listen("tcp", "0.0.0.0:64417")
     Err(err)
 
@@ -18,13 +20,13 @@ func listen() {
         conn, err := ln.Accept()
         Err(err)
 
-        system.Console.Info("New client:", conn.RemoteAddr().String())
+        system.Console.Info("New client: ", conn.RemoteAddr().String())
 
         queryBufferLock.Lock()
         buffer := make([]schema.Log, len(queryBuffer))
         copy(buffer, queryBuffer)
         queryBufferLock.Unlock()
 
-        go eventserver.Onboard(conn, buffer)
+        go eventserver.Onboard(conn, cache)
     }
 }

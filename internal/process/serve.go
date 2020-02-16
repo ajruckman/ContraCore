@@ -3,6 +3,7 @@ package process
 import (
     "context"
     "errors"
+    "net"
     "strings"
     "time"
 
@@ -27,7 +28,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
         r:              r,
         _question:      r.Question[0],
         _domain:        functions.RT(r.Question[0].Name),
-        _client:        strings.Split(w.RemoteAddr().String(), ":")[0],
+        _client:        net.ParseIP(strings.Split(w.RemoteAddr().String(), ":")[0]),
 
         received: time.Now().UTC(),
     }
@@ -39,32 +40,37 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
     // These will be needed when we implement whitelisting anyway, so I don't mind looking them up for all requests
     lease, found := getLeaseByIP(q._client)
     if found {
-        q.mac = &lease.MAC
+        m := lease.MAC.String()
+        q.mac = &m
         q.hostname = lease.Hostname
         q.vendor = lease.Vendor
     }
 
-    system.Console.Infof("%s -> %d %s", q._client, r.Id, dns.TypeToString[q._question.Qtype])
+    system.Console.Info("incoming: ", q.String())
 
-    //if strings.Count(q._domain, ".") == 0 {
-        // Always check this; queries with search domains will contain periods
-        if ret, rcode, err := respondByHostname(&q); ret {
-            return rcode, err
-        }
+    //if q.hostname != nil && strings.ToLower(*q.hostname) == "syd-laptop" {
+    //    system.Console.Infof("This is Syd's laptop; skipping blacklist")
+    //    goto skip
     //}
+
+    if whitelisted := whitelist(&q); whitelisted {
+        goto skip
+    }
+
+    if ret, rcode, err := blacklist(&q); ret {
+        return rcode, err
+    }
+
+skip:
+
+    // Always check this; queries with search domains will contain periods
+    if ret, rcode, err := respondByHostname(&q); ret {
+        return rcode, err
+    }
 
     if ret, rcode, err := respondByPTR(&q); ret {
         return rcode, err
     }
-
-    if q.hostname != nil && strings.ToLower(*q.hostname) == "syd-laptop" {
-        system.Console.Infof("This is Syd's laptop; skipping respondWithBlock")
-        goto skip
-    }
-    if ret, rcode, err := respondWithBlock(&q); ret {
-        return rcode, err
-    }
-skip:
 
     // TODO: strip search domain to check DomainNeeded safely
     if config.DomainNeeded && strings.Count(q._domain, ".") == 0 {

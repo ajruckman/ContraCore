@@ -16,7 +16,7 @@ var (
     PassedTotDuration   atomic.Duration
     PassedTotCount      atomic.Uint32
 
-    LogDurations = true
+    LogRuleLookupDurations = true
 
     queryChannel = make(chan schema.Log)
 )

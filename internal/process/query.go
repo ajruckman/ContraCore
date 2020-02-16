@@ -2,6 +2,7 @@ package process
 
 import (
     "fmt"
+    "math/rand"
     "net"
     "strings"
     "time"
@@ -31,10 +32,11 @@ type queryContext struct {
     _question dns.Question
 
     _domain string
-    _client string
+    _client net.IP
 
     received time.Time
-    mac      *net.HardwareAddr
+    //mac      *net.HardwareAddr
+    mac      *string
     hostname *string
     vendor   *string
 
@@ -53,7 +55,7 @@ func (q *queryContext) respond(res *dns.Msg) (err error) {
 
     log.Query(schema.Log{
         Time:           q.received,
-        Client:         q._client,
+        Client:         q._client.String(),
         Question:       q._domain,
         QuestionType:   dns.TypeToString[q._question.Qtype],
         Action:         string(q.action),
@@ -61,12 +63,16 @@ func (q *queryContext) respond(res *dns.Msg) (err error) {
         ClientMAC:      q.mac,
         ClientHostname: q.hostname,
         ClientVendor:   q.vendor,
-        QueryID:        uint16(3),
+        QueryID:        uint16(rand.Intn(65536)),
         Duration:       time.Now().Sub(q.received),
     })
 
     err = q.ResponseWriter.WriteMsg(res)
     return
+}
+
+func (q queryContext) String() string {
+    return fmt.Sprintf("{%s | %d -> [%s] %s}", q._client.String(), q.r.Id, dns.TypeToString[q._question.Qtype], q._domain)
 }
 
 func (q queryContext) WriteMsg(r *dns.Msg) error {

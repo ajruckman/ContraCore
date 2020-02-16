@@ -11,6 +11,7 @@
     }
     log
     #errors
+    debug
 
     #pprof :6060
 }

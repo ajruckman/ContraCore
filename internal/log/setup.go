@@ -5,8 +5,8 @@ import (
 )
 
 func Setup() {
-    go listen()
     go queryBufferFlushScheduled()
+    go listen()
     go statWorker()
     go inputMonitor()
 

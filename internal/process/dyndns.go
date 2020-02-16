@@ -1,6 +1,7 @@
 package process
 
 import (
+    "net"
     "regexp"
     "strings"
     "sync"
@@ -95,9 +96,9 @@ func getLeasesByHostname(hostname string) ([]dbschema.LeaseDetails, bool) {
     }
 }
 
-func getLeaseByIP(ip string) (dbschema.LeaseDetails, bool) {
+func getLeaseByIP(ip net.IP) (dbschema.LeaseDetails, bool) {
     dhcpIPToLeaseLock.Lock()
-    v, ok := dhcpIPToLease.Load(ip)
+    v, ok := dhcpIPToLease.Load(ip.String())
     dhcpIPToLeaseLock.Unlock()
 
     if ok {
@@ -140,7 +141,7 @@ func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
             }
         }
 
-        //log.Console.Error("lease with hostname '", q._domain, "' exists but query type is not A or AAAA")
+        system.Console.Debug("lease with hostname '", q._domain, "' exists but query type is not A or AAAA")
         //m = responseWithCode(q.r, dns.RcodeSuccess)
         //err = q.respond(m)
         //return true, dns.RcodeSuccess, err
@@ -162,7 +163,7 @@ func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
     if strings.HasSuffix(q._domain, ".in-addr.arpa") && matchReverse.MatchString(q._domain) {
         bits := getReverse.FindStringSubmatch(q._domain)
 
-        ip := bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1]
+        ip := net.ParseIP(bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1])
 
         if v, ok := getLeaseByIP(ip); ok {
             if v.Hostname == nil {

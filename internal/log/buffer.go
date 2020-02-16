@@ -14,13 +14,19 @@ var (
     queryBufferLock sync.Mutex
 
     queryBufferSaveThreshold = 100              // Save all in buffer if the buffer contains this many queries
-    queryBufferSaveInterval  = time.Second * 3 // Save all in buffer if no new logs have been added after this time
+    queryBufferSaveInterval  = time.Second * 30 // Save all in buffer if no new logs have been added after this time
 
     queryBufferFlushTicker = time.NewTicker(queryBufferSaveInterval)
 )
 
 func enqueue(log schema.Log) {
     queryBufferLock.Lock()
+
+    cache = append(cache, log)
+    if len(cache) > cacheSize {
+        over := len(cache) - cacheSize
+        cache = cache[over:]
+    }
 
     queryBuffer = append(queryBuffer, log)
 

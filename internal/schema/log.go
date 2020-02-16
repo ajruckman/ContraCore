@@ -1,21 +1,21 @@
 package schema
 
 import (
-    "net"
     "time"
 
     "github.com/ajruckman/ContraCore/internal/db/contralog/dbschema"
 )
 
 type Log struct {
-    ID             int `json:"-"`
+    //ID             int `json:"-"`
     Time           time.Time
     Client         string
     Question       string
     QuestionType   string
     Action         string
     Answers        []string
-    ClientMAC      *net.HardwareAddr
+    //ClientMAC      *net.HardwareAddr
+    ClientMAC      *string
     ClientHostname *string
     ClientVendor   *string
 
@@ -26,7 +26,7 @@ type Log struct {
 func LogsFromContraLogs(contraLogs []dbschema.Log) (res []Log) {
     for _, l := range contraLogs {
         res = append(res, Log{
-            ID:             l.ID,
+            //ID:             l.ID,
             Time:           l.Time,
             Client:         l.Client,
             Question:       l.Question,
@@ -44,7 +44,7 @@ func LogsFromContraLogs(contraLogs []dbschema.Log) (res []Log) {
 
 func (log Log) ToContraLog() dbschema.Log {
     return dbschema.Log{
-        ID:             log.ID,
+        //ID:             log.ID,
         Time:           log.Time,
         Client:         log.Client,
         Question:       log.Question,

@@ -3,7 +3,8 @@ module github.com/ajruckman/ContraCore
 go 1.13
 
 require (
-	github.com/Azure/go-autorest v11.1.2+incompatible // indirect
+	github.com/Azure/go-autorest v13.3.3+incompatible // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.8.2 // indirect
 	github.com/ClickHouse/clickhouse-go v1.3.13
 	github.com/DATA-DOG/go-sqlmock v1.4.0 // indirect
 	github.com/ajruckman/xlib v1.4.1

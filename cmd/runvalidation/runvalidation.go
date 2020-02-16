@@ -24,7 +24,7 @@ func main() {
     config.ContraDBURL = "postgres://contradbmgr:contradbmgr@127.0.0.1/contradb"
     contradb.Setup()
 
-    var rules []dbschema.Rule
+    var rules []dbschema.Blacklist
     err := contradb.Select(&rules, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM rule ORDER BY random()`)
     xlib.Err(err)
 

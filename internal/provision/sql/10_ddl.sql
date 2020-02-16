@@ -16,8 +16,8 @@ CREATE TABLE IF NOT EXISTS log
     CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
 );
 
------ Rule
-CREATE TABLE IF NOT EXISTS rule
+----- Blacklist
+CREATE TABLE IF NOT EXISTS blacklist
 (
     id      SERIAL NOT NULL,
     pattern TEXT   NOT NULL,
@@ -26,16 +26,44 @@ CREATE TABLE IF NOT EXISTS rule
     tld     TEXT,
     sld     TEXT,
 
-    CONSTRAINT rule_pk PRIMARY KEY (id),
-    CONSTRAINT rule_class_chk CHECK (0 <= class AND class <= 3),
+    CONSTRAINT blacklist_pk PRIMARY KEY (id),
+    CONSTRAINT blacklist_class_chk CHECK (0 <= class AND class <= 3),
 
-    CONSTRAINT rule_nonnull_chk CHECK
+    CONSTRAINT blacklist_nonnull_chk CHECK
         (
             (class = 0 AND domain IS NULL AND tld IS NULL AND sld IS NULL)
             OR
             (class = 1 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NULL)
             OR
             (class = 2 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NOT NULL)
+        )
+);
+
+----- Whitelist
+CREATE TABLE IF NOT EXISTS whitelist
+(
+    id        SERIAL NOT NULL,
+    pattern   TEXT   NOT NULL,
+    expires   TIMESTAMP,
+    ips       INET[],
+    subnets   CIDR[],
+    macs      MACADDR[],
+    vendors   TEXT[],
+    hostnames TEXT[],
+
+    CONSTRAINT whitelist_pk PRIMARY KEY (id),
+
+    CONSTRAINT whitelist_nonnull_chk CHECK
+        (
+            (ips IS NOT NULL)
+            OR
+            (subnets IS NOT NULL)
+            OR
+            (macs IS NOT NULL)
+            OR
+            (vendors IS NOT NULL)
+            OR
+            (hostnames IS NOT NULL)
         )
 );
 
