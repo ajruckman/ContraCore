@@ -1,59 +1,35 @@
 package schema
 
 import (
-    "time"
+	"time"
 
-    "github.com/ajruckman/ContraCore/internal/db/contralog/dbschema"
+	"github.com/ajruckman/ContraCore/internal/db/contralog/dbschema"
 )
 
+// A query log record with additional internal fields.
 type Log struct {
-    //ID             int `json:"-"`
-    Time           time.Time
-    Client         string
-    Question       string
-    QuestionType   string
-    Action         string
-    Answers        []string
-    //ClientMAC      *net.HardwareAddr
-    ClientMAC      *string
-    ClientHostname *string
-    ClientVendor   *string
+	dbschema.Log
 
-    QueryID  uint16
-    Duration time.Duration `json:"-"`
+	Duration time.Duration `json:"-"`
 }
 
+// Converts a slice of ContraLog log structs to a slice of wrapped log structs.
 func LogsFromContraLogs(contraLogs []dbschema.Log) (res []Log) {
-    for _, l := range contraLogs {
-        res = append(res, Log{
-            //ID:             l.ID,
-            Time:           l.Time,
-            Client:         l.Client,
-            Question:       l.Question,
-            QuestionType:   l.QuestionType,
-            Action:         l.Action,
-            Answers:        l.Answers,
-            ClientMAC:      l.ClientMAC,
-            ClientHostname: l.ClientHostname,
-            ClientVendor:   l.ClientVendor,
-            QueryID:        l.QueryID,
-        })
-    }
-    return
-}
-
-func (log Log) ToContraLog() dbschema.Log {
-    return dbschema.Log{
-        //ID:             log.ID,
-        Time:           log.Time,
-        Client:         log.Client,
-        Question:       log.Question,
-        QuestionType:   log.QuestionType,
-        Action:         log.Action,
-        Answers:        log.Answers,
-        ClientMAC:      log.ClientMAC,
-        ClientHostname: log.ClientHostname,
-        ClientVendor:   log.ClientVendor,
-        QueryID:        log.QueryID,
-    }
+	for _, l := range contraLogs {
+		res = append(res, Log{
+			Log: dbschema.Log{
+				Time:           l.Time,
+				Client:         l.Client,
+				Question:       l.Question,
+				QuestionType:   l.QuestionType,
+				Action:         l.Action,
+				Answers:        l.Answers,
+				ClientMAC:      l.ClientMAC,
+				ClientHostname: l.ClientHostname,
+				ClientVendor:   l.ClientVendor,
+				QueryID:        l.QueryID,
+			},
+		})
+	}
+	return
 }

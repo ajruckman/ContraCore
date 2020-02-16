@@ -1,19 +1,19 @@
 package main
 
 import (
-    "fmt"
-    "testing"
-    "time"
+	"fmt"
+	"testing"
+	"time"
 
-    "github.com/ajruckman/ContraCore/internal/rule"
+	"github.com/ajruckman/ContraCore/internal/rule"
 )
 
 func BenchmarkDummyStart(b *testing.B) {
-    b.ReportAllocs()
+	b.ReportAllocs()
 
-    for i := 0; i < b.N; i++ {
-        time.Sleep(time.Millisecond)
-    }
+	for i := 0; i < b.N; i++ {
+		time.Sleep(time.Millisecond)
+	}
 }
 
 //func BenchmarkPubSub(b *testing.B) {
@@ -57,16 +57,16 @@ func BenchmarkDummyStart(b *testing.B) {
 //}
 
 func benchmarkProcessFromURLsWithPointers(b *testing.B) {
-    b.ReportAllocs()
-    b.N =1
+	b.ReportAllocs()
+	b.N = 1
 
-    //for i := 0; i < b.N; i++ {
-        began := time.Now()
-        res, total := rule.GenFromURLs(urls)
-        _ = began
-        _ = res
-        fmt.Println("=>", total)
-        //fmt.Println(len(res), time.Since(began))
-    //}
+	//for i := 0; i < b.N; i++ {
+	began := time.Now()
+	res, total := rule.GenFromURLs(urls)
+	_ = began
+	_ = res
+	fmt.Println("=>", total)
+	//fmt.Println(len(res), time.Since(began))
+	//}
 
 }

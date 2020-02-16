@@ -1,53 +1,53 @@
 package main
 
 import (
-    "fmt"
-    "math/rand"
+	"fmt"
+	"math/rand"
 )
 
 var (
-    urls = []string{
-        "https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
-        "https://someonewhocares.org/hosts/hosts",
-        "https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
-        "https://www.encrypt-the-planet.com/downloads/hosts",
-    }
-    contents [][]byte
+	urls = []string{
+		"https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
+		"https://someonewhocares.org/hosts/hosts",
+		"https://gist.githubusercontent.com/angristan/20a398983c5b1daa9c13a1cbadb78fd6/raw/58d54b172b664ee5a0b53bb2e25c391433f2cc7a/hosts",
+		"https://www.encrypt-the-planet.com/downloads/hosts",
+	}
+	contents [][]byte
 )
 
 func init() {
-    //for _, url := range urls {
-    //    fmt.Print("Reading ", url, "... ")
-    //    resp, err := http.Get(url)
-    //    Err(err)
-    //    read, err := ioutil.ReadAll(resp.Body)
-    //    Err(err)
-    //    contents = append(contents, read)
-    //    fmt.Println("done")
-    //}
+	//for _, url := range urls {
+	//    fmt.Print("Reading ", url, "... ")
+	//    resp, err := http.Get(url)
+	//    Err(err)
+	//    read, err := ioutil.ReadAll(resp.Body)
+	//    Err(err)
+	//    contents = append(contents, read)
+	//    fmt.Println("done")
+	//}
 }
 
 func main() {
-    for i := 0; i < 100000000000; i++ {
-        n := rand.Intn(65536)
-        if n > 65535 {
-            fmt.Println(n)
-        }
-        //n := 100 + rand.Intn(900)
-        //if n > 999 {
-        //    fmt.Println(n)
-        //}
-        //if n < 100 {
-        //    fmt.Println(n)
-        //}
-    }
-    //began := time.Now()
-    //res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
-    //
-    //fmt.Println("Time: ", time.Since(began))
-    //fmt.Println("Total:", total)
-    //fmt.Println("Kept: ", len(res))
-    //fmt.Println("Ratio:", float64(len(res))/float64(total))
+	for i := 0; i < 100000000000; i++ {
+		n := rand.Intn(65536)
+		if n > 65535 {
+			fmt.Println(n)
+		}
+		//n := 100 + rand.Intn(900)
+		//if n > 999 {
+		//    fmt.Println(n)
+		//}
+		//if n < 100 {
+		//    fmt.Println(n)
+		//}
+	}
+	//began := time.Now()
+	//res, total := rulegen.ProcessDomainSources(rulegen.BlockV2, contents...)
+	//
+	//fmt.Println("Time: ", time.Since(began))
+	//fmt.Println("Total:", total)
+	//fmt.Println("Kept: ", len(res))
+	//fmt.Println("Ratio:", float64(len(res))/float64(total))
 }
 
 //urls     = []string{"spark", "bluGo", "blu", "basic", "ultimate", "unified"}

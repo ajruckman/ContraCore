@@ -1,28 +1,28 @@
 package main
 
 import (
-    "log"
-    "log/syslog"
-    "os"
-    "strings"
+	"log"
+	"log/syslog"
+	"os"
+	"strings"
 
-    . "github.com/ajruckman/xlib"
+	. "github.com/ajruckman/xlib"
 
-    "github.com/ajruckman/ContraCore/internal/db/contradb"
+	"github.com/ajruckman/ContraCore/internal/db/contradb"
 )
 
 func main() {
-    logwriter, err := syslog.New(syslog.LOG_NOTICE, "loglease")
-    Err(err)
-    log.SetOutput(logwriter)
-    log.Print(strings.Join(os.Args, " | "))
+	logwriter, err := syslog.New(syslog.LOG_NOTICE, "loglease")
+	Err(err)
+	log.SetOutput(logwriter)
+	log.Print(strings.Join(os.Args, " | "))
 
-    op, mac, ip, hostname := coalesce(1), coalesce(2), coalesce(3), coalesce(4)
-    logNewEntry(op, mac, ip, hostname)
+	op, mac, ip, hostname := coalesce(1), coalesce(2), coalesce(3), coalesce(4)
+	logNewEntry(op, mac, ip, hostname)
 }
 
 func logNewEntry(op, mac, ip, hostname string) {
-    _, err := contradb.Exec(`
+	_, err := contradb.Exec(`
 
 INSERT INTO lease (source, op, ip, mac, hostname, vendor)
 SELECT values.*, o.vendor
@@ -37,15 +37,15 @@ LEFT OUTER JOIN oui o ON o.mac = left($4::TEXT, 8)
 GROUP BY values.source, values.op, values.ip, values.mac, values.hostname, o.vendor;
 
 `,
-        "dnsmasq", op, ip, mac, hostname)
+		"dnsmasq", op, ip, mac, hostname)
 
-    Err(err)
+	Err(err)
 }
 
 func coalesce(index int) string {
-    if len(os.Args) > index {
-        return os.Args[index]
-    } else {
-        return ""
-    }
+	if len(os.Args) > index {
+		return os.Args[index]
+	} else {
+		return ""
+	}
 }
