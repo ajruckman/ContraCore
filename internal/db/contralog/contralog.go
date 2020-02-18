@@ -33,6 +33,8 @@ func Setup() {
 
 	connect()
 
+	ping()
+
 	go monitor()
 }
 
@@ -56,8 +58,6 @@ func connect() {
 }
 
 func monitor() {
-	ping()
-
 	for range time.Tick(time.Second * 10) {
 		ping()
 	}

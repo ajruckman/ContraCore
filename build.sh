@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GOPATH="/mnt/s/go/gopath"
+
 set +H
 git config --global --add url."git@github.com:".insteadOf "https://github.com/"
 
