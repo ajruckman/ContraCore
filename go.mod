@@ -9,9 +9,11 @@ require (
 	github.com/DATA-DOG/go-sqlmock v1.4.0 // indirect
 	github.com/ajruckman/xlib v1.4.1
 	github.com/ajstarks/svgo v0.0.0-20200204031535-0cbcf57ea1d8 // indirect
+	github.com/boyter/scc v2.11.0+incompatible // indirect
 	github.com/caddyserver/caddy v1.0.4
 	github.com/coredns/coredns v1.6.7
 	github.com/cosiner/argv v0.0.1 // indirect
+	github.com/dbaggerman/cuba v0.3.2 // indirect
 	github.com/ericlagergren/decimal v0.0.0-20191206042408-88212e6cfca9 // indirect
 	github.com/friendsofgo/errors v0.9.2 // indirect
 	github.com/gin-gonic/gin v1.5.0
@@ -30,6 +32,8 @@ require (
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/mattn/go-runewidth v0.0.8 // indirect
 	github.com/miekg/dns v1.1.27
+	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1 // indirect
+	github.com/monochromegane/go-gitignore v0.0.0-20160105113617-38717d0a108c // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/peterh/liner v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

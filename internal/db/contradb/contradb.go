@@ -4,9 +4,11 @@ package contradb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net"
 	"net/url"
 	"reflect"
+	"runtime/debug"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -35,6 +37,8 @@ func Setup() {
 	connect()
 
 	readConfig()
+
+	ping()
 
 	go monitor()
 }
@@ -70,8 +74,6 @@ func connect() {
 }
 
 func monitor() {
-	ping()
-
 	for range time.Tick(time.Second * 10) {
 		ping()
 	}
@@ -113,6 +115,7 @@ func ping() {
 
 	err = pdb.Ping(context.Background())
 	if err != nil {
+		fmt.Println(err)
 		offline(err)
 	} else {
 		online()
@@ -125,6 +128,7 @@ func offline(err error) {
 			system.Console.Error("failed to ping ContraDB with unanticipated error:")
 			system.Console.Error(err.Error())
 		} else {
+			fmt.Println(string(debug.Stack()))
 			system.Console.Error("failed to ping ContraDB because it is offline")
 		}
 		system.ContraDBOnline.Store(false)

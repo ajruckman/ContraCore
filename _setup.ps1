@@ -18,6 +18,12 @@ Write-Output ""
 
 cd "$(go env GOPATH)\src\github.com\ajruckman\ContraCore"
 
+Write-Output "Generating..."
+cd .\internal\
+go generate
+cd ..
+Write-Output ""
+
 #go build -o coredns.exe
 
 #$ErrorActionPreference = 'SilentlyContinue'
