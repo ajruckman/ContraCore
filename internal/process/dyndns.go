@@ -109,42 +109,62 @@ func getLeaseByIP(ip net.IP) (dbschema.LeaseDetails, bool) {
 }
 
 func respondByHostname(q *queryContext) (ret bool, rcode int, err error) {
-	if v, ok := getLeasesByHostname(q._domain); ok {
+	var hostname string
+
+	if q._suffix != nil {
+		for _, searchDomain := range system.SearchDomains {
+			system.Console.Infof("=== %s %s %s", searchDomain, *q._suffix, q._domain)
+
+			if searchDomain == *q._suffix {
+				hostname = strings.TrimSuffix(q._domain, "."+*q._suffix)
+				q._matchedSearchDomain = &searchDomain
+				system.Console.Infof("matched question '%s' with search domain '%s'; new hostname: '%s'", q._domain, searchDomain, hostname)
+				goto found
+			}
+		}
+
+		// Hostname has a suffix, but it was not matched in the database
+		return
+
+	} else {
+		hostname = q._domain
+		system.Console.Infof("question '%s' does not have suffix; hostname: '%s'", q._domain, hostname)
+	}
+found:
+
+	if v, ok := getLeasesByHostname(hostname); ok {
 		var m *dns.Msg
 
 		for _, lease := range v {
 			if lease.IP.To4() != nil {
 				if q._question.Qtype == dns.TypeA {
-					system.Console.Debug("lease IP is IPv4, question is A")
+					system.Console.Infof("answering query %d with value '%s'", q.r.Id, lease.IP.To4().String())
 					q.action = ActionDDNSHostname
 					//q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
 					m = genResponse(q.r, q._question.Qtype, lease.IP.To4().String())
 					err = q.respond(m)
 					return true, dns.RcodeSuccess, err
-				} else {
+				} else if q._question.Qtype == dns.TypeAAAA {
 					system.Console.Debug("lease IP is IPv4, question is AAAA")
 					continue
 				}
 
 			} else if lease.IP.To16() != nil {
 				if q._question.Qtype == dns.TypeAAAA {
-					system.Console.Debug("lease IP is IPv6, question is AAAA")
+					system.Console.Infof("answering query %d with value '%s'", q.r.Id, lease.IP.To16().String())
 					q.action = ActionDDNSHostname
 					//q.Action = "ddns-hostname" // TODO: Special action for RcodeServerFailure?
 					m = genResponse(q.r, q._question.Qtype, lease.IP.To16().String())
 					err = q.respond(m)
 					return true, dns.RcodeSuccess, err
-				} else {
+				} else if q._question.Qtype == dns.TypeA {
 					system.Console.Debug("lease IP is IPv6, question is A")
 					continue
 				}
 			}
 		}
 
-		system.Console.Debug("lease with hostname '", q._domain, "' exists but query type is not A or AAAA")
-		//m = responseWithCode(q.r, dns.RcodeSuccess)
-		//err = q.respond(m)
-		//return true, dns.RcodeSuccess, err
+		system.Console.Debugf("lease with hostname '%s' exists but query type '%s' is not A or AAAA", q._domain, dns.TypeToString[q._question.Qtype])
 	}
 
 	return

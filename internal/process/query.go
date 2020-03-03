@@ -32,11 +32,12 @@ type queryContext struct {
 	r         *dns.Msg
 	_question dns.Question
 
-	_domain string
-	_client net.IP
+	_domain              string
+	_suffix              *string
+	_matchedSearchDomain *string
+	_client              net.IP
 
 	received time.Time
-	//mac      *net.HardwareAddr
 	mac      *string
 	hostname *string
 	vendor   *string

@@ -32,11 +32,16 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
 		received: time.Now().UTC(),
 	}
 
+	dcs := strings.Split(q._domain, ".")
+	if len(dcs) > 1 {
+		suffix := strings.Join(dcs[1:], ".")
+		q._suffix = &suffix
+	}
+
 	if q._domain == "!runprobe" {
 		return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, 15)) // 15 = max valid unassigned RCODE
 	}
 
-	// These will be needed when we implement whitelisting anyway, so I don't mind looking them up for all requests
 	lease, found := getLeaseByIP(q._client)
 	if found {
 		m := lease.MAC.String()
@@ -47,12 +52,8 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
 
 	system.Console.Info("incoming: ", q.String())
 
-	//if q.hostname != nil && strings.ToLower(*q.hostname) == "syd-laptop" {
-	//    system.Console.Infof("This is Syd's laptop; skipping blacklist")
-	//    goto skip
-	//}
-
 	if whitelisted := whitelist(&q); whitelisted {
+		q.action = ActionWhitelisted // Might be overwritten by other returners
 		goto skip
 	}
 
@@ -72,17 +73,21 @@ skip:
 	}
 
 	// TODO: strip search domain to check DomainNeeded safely
-	if system.DomainNeeded && strings.Count(q._domain, ".") == 0 {
+	if system.DomainNeeded && (strings.Count(q._domain, ".") == 0 || q._matchedSearchDomain != nil) {
 		if q._question.Qtype == dns.TypeNS && q._domain == "" {
 			// Permit looking up root servers
 			goto next
 		}
 
-		system.Console.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning RcodeServerFailure", q._domain)
+		if q._matchedSearchDomain == nil {
+			system.Console.Infof("DomainNeeded is true and question '%s' does not contain any periods; returning NXDomain", q._domain)
+		} else {
+			system.Console.Infof("DomainNeeded is true and question '%s' has a search domain that was not found; returning NXDomain", q._domain)
+		}
 		q.action = ActionDomainNeeded
-		m := responseWithCode(r, dns.RcodeServerFailure)
+		m := responseWithCode(r, dns.RcodeNameError)
 		err := q.respond(m)
-		return dns.RcodeServerFailure, err
+		return dns.RcodeRefused, err
 	}
 next:
 
