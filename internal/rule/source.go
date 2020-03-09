@@ -18,7 +18,7 @@ import (
 
 var (
 	// Controls the maximum number of concurrent rule gen workers.
-	MaxPar = 1
+	MaxPar = 4
 
 	// Controls the maximum number of rule source lines to send to a rule gen
 	// worker.
@@ -180,7 +180,7 @@ var prefixes = [...]string{"0.0.0.0", "127.0.0.1", "::", "::0", "::1"}
 func SaveRules(res []string) {
 	rulesIn = make(chan [][]interface{})
 
-	_, err := contradb.Exec(`TRUNCATE TABLE rule;`)
+	_, err := contradb.Exec(`TRUNCATE TABLE blacklist;`)
 	Err(err)
 
 	saveWG.Add(1)
@@ -243,7 +243,7 @@ func SaveRules(res []string) {
 // Saves rule batches pushed onto the rule save channel to ContraDB.
 func dbSaveWorker() {
 	for set := range rulesIn {
-		_, err := contradb.CopyFrom(pgx.Identifier{"rule"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
+		_, err := contradb.CopyFrom(pgx.Identifier{"blacklist"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
 		Err(err)
 	}
 

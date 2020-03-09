@@ -26,12 +26,6 @@ var (
 func enqueue(log schema.Log) {
 	queryBufferLock.Lock()
 
-	cache = append(cache, log)
-	if len(cache) > cacheSize {
-		over := len(cache) - cacheSize
-		cache = cache[over:]
-	}
-
 	queryBuffer = append(queryBuffer, log)
 
 	if len(queryBuffer) >= queryBufferSaveThreshold {

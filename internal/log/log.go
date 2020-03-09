@@ -5,7 +5,7 @@ import (
 
 	"go.uber.org/atomic"
 
-	"github.com/ajruckman/ContraCore/internal/log/eventserver"
+	"github.com/ajruckman/ContraCore/internal/netmgr"
 	"github.com/ajruckman/ContraCore/internal/schema"
 	"github.com/ajruckman/ContraCore/internal/system"
 )
@@ -46,7 +46,7 @@ func Query(log schema.Log) {
 // Processes records on the query log channel.
 func inputMonitor() {
 	for log := range queryChannel {
-		eventserver.Transmit(log)
+		netmgr.ProcessQuery(log)
 		enqueue(log)
 	}
 }

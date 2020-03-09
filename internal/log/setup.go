@@ -1,15 +1,15 @@
 package log
 
 import (
-	"github.com/ajruckman/ContraCore/internal/log/eventserver"
+	"github.com/ajruckman/ContraCore/internal/netmgr"
 )
 
 // Package setup function.
 func Setup() {
 	go queryBufferFlushScheduled()
-	go listen()
+	//go listen()
 	go statWorker()
 	go inputMonitor()
 
-	go eventserver.Setup()
+	go netmgr.Setup()
 }

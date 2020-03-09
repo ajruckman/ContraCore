@@ -1,4 +1,4 @@
-package log
+package netmgr
 
 import (
 	. "github.com/ajruckman/xlib"

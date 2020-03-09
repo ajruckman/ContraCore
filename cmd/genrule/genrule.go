@@ -36,12 +36,12 @@ var (
 	// https://v.firebog.net/hosts/lists.php
 	// Around ~255,000 distinct domains
 	ticked = []string{
-		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
+		"https://raw.githubusercontent.com/EnergizedProtection/block/master/spark/formats/domains.txt",
 		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/bluGo/formats/domains.txt",
 		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/blu/formats/domains.txt",
 		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/basic/formats/domains.txt",
 		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/ultimate/formats/domains.txt",
-		"https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
+		//"https://raw.githubusercontent.com/EnergizedProtection/block/master/unified/formats/domains.txt",
 		//
 		"https://hosts-file.net/grm.txt",
 		"https://hosts-file.net/exp.txt",

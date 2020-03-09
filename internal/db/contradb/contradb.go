@@ -2,7 +2,6 @@
 package contradb
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -105,7 +104,7 @@ func errOfflineOrOriginal(err error) error {
 
 // Pings ContraDB to trigger online/offline code.
 func ping() {
-	var err error
+	//var err error
 
 	if xdb == nil || pdb == nil {
 		connect()
@@ -113,13 +112,13 @@ func ping() {
 		return
 	}
 
-	err = pdb.Ping(context.Background())
-	if err != nil {
-		fmt.Println(err)
-		offline(err)
-	} else {
-		online()
-	}
+	//err = pdb.Ping(context.Background())
+	//if err != nil {
+	//	fmt.Println(err)
+	//	offline(err)
+	//} else {
+	//	online()
+	//}
 }
 
 func offline(err error) {
