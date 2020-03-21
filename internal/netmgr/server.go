@@ -114,15 +114,11 @@ func interpret(c client, line string) {
 
 		// Get sources
 		sources := system.RuleSources
-		system.Console.Infof("netmgr: Generating rules from %d sources", len(sources))
+		msg := fmt.Sprintf("Generating rules from %d sources: %s", len(sources), strings.Join(sources, ", "))
+		system.Console.Infof("netmgr: " + msg)
 
-		data, err := json.Marshal(sources)
-		handleErr(err, "netmgr: Error serializing rule sources", "")
-		if err != nil {
-			return
-		}
-		data = append([]byte("gen_rules.sources "), data...)
-		err = sendBytes(c, data)
+		data := append([]byte("gen_rules.sources "), []byte(msg)...)
+		err := sendBytes(c, data)
 		handleErr(err, "netmgr: Failed to send sources to client", "")
 		if err != nil {
 			return
@@ -144,9 +140,10 @@ func interpret(c client, line string) {
 		})
 		end := time.Now()
 
-		system.Console.Infof("netmgr: Rules saved in %s", end.Sub(begin))
-		err = sendString(c, fmt.Sprintf("gen_rules.saved_in %d", end.Sub(begin).Milliseconds()))
-		handleErr(err, "netmgr: Failed to send rule save time to client " + c.address, "")
+		msg = "Blacklist rules saved in " + end.Sub(begin).String()
+		system.Console.Infof("netmgr: " + msg)
+		err = sendString(c, "gen_rules.saved_in " + msg)
+		handleErr(err, "netmgr: Failed to send rule save time to client "+c.address, "")
 		if err != nil {
 			return
 		}
@@ -160,12 +157,17 @@ func interpret(c client, line string) {
 		})
 		end = time.Now()
 
-		system.Console.Infof("netmgr: Blacklist rules re-cached in %v", end.Sub(begin))
-		err = sendString(c, fmt.Sprintf("gen_rules.recached_in %d", end.Sub(begin).Milliseconds()))
-		handleErr(err, "netmgr: Failed to send blacklist rule re-cache time to client " + c.address, "")
+		msg = "Blacklist rules re-cached in " + end.Sub(begin).String()
+		system.Console.Infof("netmgr: " + msg)
+		err = sendString(c, fmt.Sprintf("gen_rules.recached_in "+msg))
+		handleErr(err, "netmgr: Failed to send blacklist rule re-cache time to client "+c.address, "")
 		if err != nil {
 			return
 		}
+
+		// Complete
+		err = sendString(c, fmt.Sprintf("gen_rules.complete"))
+		handleErr(err, "netmgr: Failed to send complete message to client "+c.address, "")
 
 	default:
 		system.Console.Warningf("netmgr: Unknown command received from c %s: '%s'", c.address, cmd)

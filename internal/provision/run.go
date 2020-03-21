@@ -15,7 +15,7 @@ func Setup() {
     clog.Info(`Provisioning database`)
     _, err := contradb.Exec(`
 ----- Log
-CREATE TABLE IF NOT EXISTS log
+CREATE TABLE IF NOT EXISTS contra.log
 (
     id              BIGSERIAL NOT NULL,
     time            TIMESTAMP NOT NULL DEFAULT now(),
@@ -32,31 +32,8 @@ CREATE TABLE IF NOT EXISTS log
     CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
 );
 
------ Blacklist
-CREATE TABLE IF NOT EXISTS blacklist
-(
-    id      SERIAL NOT NULL,
-    pattern TEXT   NOT NULL,
-    class   INT    NOT NULL,
-    domain  TEXT,
-    tld     TEXT,
-    sld     TEXT,
-
-    CONSTRAINT blacklist_pk PRIMARY KEY (id),
-    CONSTRAINT blacklist_class_chk CHECK (0 <= class AND class <= 3),
-
-    CONSTRAINT blacklist_nonnull_chk CHECK
-        (
-            (class = 0 AND domain IS NULL AND tld IS NULL AND sld IS NULL)
-            OR
-            (class = 1 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NULL)
-            OR
-            (class = 2 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NOT NULL)
-        )
-);
-
 ----- Whitelist
-CREATE TABLE IF NOT EXISTS whitelist
+CREATE TABLE IF NOT EXISTS contra.whitelist
 (
     id        SERIAL NOT NULL,
     pattern   TEXT   NOT NULL,
@@ -83,8 +60,31 @@ CREATE TABLE IF NOT EXISTS whitelist
         )
 );
 
+----- Blacklist
+CREATE TABLE IF NOT EXISTS contra.blacklist
+(
+    id      SERIAL NOT NULL,
+    pattern TEXT   NOT NULL,
+    class   INT    NOT NULL,
+    domain  TEXT,
+    tld     TEXT,
+    sld     TEXT,
+
+    CONSTRAINT blacklist_pk PRIMARY KEY (id),
+    CONSTRAINT blacklist_class_chk CHECK (0 <= class AND class <= 3),
+
+    CONSTRAINT blacklist_nonnull_chk CHECK
+        (
+            (class = 0 AND domain IS NULL AND tld IS NULL AND sld IS NULL)
+            OR
+            (class = 1 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NULL)
+            OR
+            (class = 2 AND domain IS NOT NULL AND tld IS NOT NULL AND sld IS NOT NULL)
+        )
+);
+
 ----- Lease
-CREATE TABLE IF NOT EXISTS lease
+CREATE TABLE IF NOT EXISTS contra.lease
 (
     id       BIGSERIAL NOT NULL,
     time     TIMESTAMP NOT NULL DEFAULT now(),
@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS lease
     CONSTRAINT lease_pk PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS reservation
+----- Reservation
+CREATE TABLE IF NOT EXISTS contra.reservation
 (
     id      SERIAL    NOT NULL,
     time    TIMESTAMP NOT NULL DEFAULT now(),
@@ -112,14 +113,14 @@ CREATE TABLE IF NOT EXISTS reservation
 );
 
 ----- OUI
-CREATE TABLE IF NOT EXISTS oui
+CREATE TABLE IF NOT EXISTS contra.oui
 (
     mac    CHAR(8),
     vendor TEXT
 );
 
 ----- Config
-CREATE TABLE IF NOT EXISTS config
+CREATE TABLE IF NOT EXISTS contra.config
 (
     id              SERIAL  NOT NULL,
     sources         TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],

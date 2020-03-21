@@ -62,6 +62,9 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 	var res []string
 	linesInBP = make(chan []string)
 
+	genBatchNum = atomic.NewInt32(0)
+	saveBatchNum = atomic.NewInt32(0)
+
 	root = node{
 		Blocked: atomic.NewBool(false),
 	}
@@ -77,20 +80,16 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 	var batch []string
 
 	for _, url := range urls {
-		status := "Reading " + url + "... "
-		resp, err := http.Get(url)
+		callback("Reading URL: " + url)
 
+		resp, err := http.Get(url)
 		if err != nil {
-			status += "error: " + err.Error()
-			callback(status)
+			callback(fmt.Sprintf("Read URL %s: Error: %s", url, err.Error()))
 			continue
 		}
 
-		status += fmt.Sprintf("status: %d; ", resp.StatusCode)
-
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			status += "skipping"
-			callback(status)
+			callback(fmt.Sprintf("Read URL %s: Error: status %d, skipping", url, resp.StatusCode))
 			continue
 		}
 
@@ -104,7 +103,7 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 			batch = append(batch, scanner.Text())
 
 			// Send batches of lines onto the rule source channel.
-			if c >= ChunkSize {
+			if c >= (ChunkSize - 1) {
 				linesInBP <- batch
 				batch = []string{}
 				c = 0
@@ -116,11 +115,9 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 		// Send remaining lines onto the rule source channel.
 		linesInBP <- batch
 
-		status += fmt.Sprintf("done, read %d lines", l)
-
 		// Don't return if callback returns true. We need to complete this
 		// process.
-		_ = callback(status)
+		_ = callback(fmt.Sprintf("Read URL %s: Done, read %d lines", url, l))
 	}
 
 	close(linesInBP)
@@ -131,7 +128,7 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 	end := time.Now()
 	kept := len(res)
 	ratio := float64(kept) / float64(distinct.Load())
-	_ = callback(fmt.Sprintf("%d rules generated from %d distinct domains in %v; ratio = %.3f", kept, distinct, end.Sub(begin), ratio))
+	_ = callback(fmt.Sprintf("%d rules generated from %d distinct domains in %v; ratio = %.3f", kept, distinct.Load(), end.Sub(begin), ratio))
 
 	return res, int(distinct.Load())
 }
@@ -139,7 +136,7 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 // If true, the rule generator will not always generate class-2 rules.
 const naiveMode = false
 
-var genBatchNum = atomic.NewInt32(0)
+var genBatchNum *atomic.Int32
 
 // Processes batches of rule source lines pushed onto the rule source channel.
 func ruleGenWorker(callback functions.ProgressCallback) {
@@ -255,7 +252,7 @@ func SaveRules(res []string, callback functions.ProgressCallback) {
 			})
 		}
 
-		if c >= SaveSize {
+		if c >= (SaveSize - 1) {
 			rulesIn <- batch
 			batch = [][]interface{}{}
 			c = 0
@@ -270,7 +267,7 @@ func SaveRules(res []string, callback functions.ProgressCallback) {
 	saveWG.Wait()
 }
 
-var saveBatchNum = atomic.NewInt32(0)
+var saveBatchNum *atomic.Int32
 
 // Saves rule batches pushed onto the rule save channel to ContraDB.
 func dbSaveWorker(callback functions.ProgressCallback) {
