@@ -20,7 +20,5 @@ func Setup() {
 		system.Console.Infof("DHCP lease cache loaded in %v; %d distinct IPs and %d distinct hostnames found", time.Since(began), ipsSeen, hostnamesSeen)
 	}
 
-	readWhitelistRules()
-	readBlacklistRules()
 	go dhcpRefreshWorker()
 }

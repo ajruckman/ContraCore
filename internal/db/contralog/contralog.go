@@ -42,19 +42,26 @@ func Setup() {
 func connect() {
 	var err error
 
-	cdb, err = sqlx.Connect("clickhouse", system.ContraLogURL)
-	if err != nil {
-		if !failedOnce.Load() {
-			system.Console.Error("failed to connect to ClickHouse database server with error:")
-			system.Console.Error(err.Error())
-			system.ContraLogOnline.Store(false)
-			failedOnce.Store(true)
+	defer func(){
+		if r := recover(); r != nil {
+			system.Console.Error("recovered from panic")
 		}
-	} else {
-		system.Console.Info("connected to ClickHouse database server")
-		system.ContraLogOnline.Store(true)
-		failedOnce.Store(false)
-	}
+		if err != nil {
+			if !failedOnce.Load() {
+				system.Console.Error("failed to connect to ClickHouse database server with error:")
+				system.Console.Error(err.Error())
+				system.ContraLogOnline.Store(false)
+				failedOnce.Store(true)
+			}
+		} else {
+			system.Console.Info("connected to ClickHouse database server")
+			system.ContraLogOnline.Store(true)
+			failedOnce.Store(false)
+		}
+	}()
+
+	cdb, err = sqlx.Connect("clickhouse", system.ContraLogURL)
+
 }
 
 func monitor() {

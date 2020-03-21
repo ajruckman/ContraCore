@@ -13,10 +13,10 @@ var transmitQueue = make(chan schema.Log)
 func ProcessQuery(log schema.Log) {
 	transmitQueue <- log
 
-	cache = append(cache, log)
-	if len(cache) > cacheSize {
-		over := len(cache) - cacheSize
-		cache = cache[over:]
+	logCache = append(logCache, log)
+	if len(logCache) > cacheSize {
+		over := len(logCache) - cacheSize
+		logCache = logCache[over:]
 	}
 }
 

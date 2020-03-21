@@ -21,4 +21,7 @@ var (
 
 	// Whether the system is currently known to be connected to ContraLog.
 	ContraLogOnline atomic.Bool
+
+	// Log time spent looking up whitelist and blacklist rules if true.
+	LogRuleLookupDurations = true
 )

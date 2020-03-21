@@ -7,7 +7,6 @@ import (
 
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
 	"github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
-	"github.com/ajruckman/ContraCore/internal/log"
 	"github.com/ajruckman/ContraCore/internal/system"
 )
 
@@ -81,7 +80,7 @@ func readWhitelistRules() {
 
 func whitelist(q *queryContext) (found bool) {
 
-	if log.LogRuleLookupDurations {
+	if system.LogRuleLookupDurations {
 		began := time.Now()
 
 		defer func() {

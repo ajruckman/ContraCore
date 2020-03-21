@@ -5,9 +5,11 @@ import (
 
 	"github.com/caddyserver/caddy"
 
+	"github.com/ajruckman/ContraCore/internal/cache"
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
 	"github.com/ajruckman/ContraCore/internal/db/contralog"
 	"github.com/ajruckman/ContraCore/internal/log"
+	"github.com/ajruckman/ContraCore/internal/netmgr"
 	"github.com/ajruckman/ContraCore/internal/process"
 	"github.com/ajruckman/ContraCore/internal/provision"
 	"github.com/ajruckman/ContraCore/internal/system"
@@ -33,8 +35,19 @@ func Setup(c *caddy.Controller) {
 		system.Console.Info("ContraDomain setup: setting up log system")
 		log.Setup()
 
+		system.Console.Info("ContraDomain setup: setting up netmgr")
+		go netmgr.Setup()
+
 		system.Console.Info("ContraDomain setup: running provisioner")
 		provision.Setup()
+
+		//system.Console.Info("ContraDomain setup: caching whitelist rules")
+		//cache.ReadWhitelist()
+		system.Console.Info("ContraDomain setup: caching blacklist rules")
+		cache.ReadBlacklist(func(s string) bool {
+			system.Console.Info("ContraDomain setup: " + s)
+			return false
+		})
 
 		system.Console.Info("ContraDomain setup: setting up query processor")
 		process.Setup()

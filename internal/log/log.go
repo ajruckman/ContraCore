@@ -16,8 +16,6 @@ var (
 	PassedTotDuration   atomic.Duration // The total time spent processing and forwarding requests that were not answered by ContraCore.
 	PassedTotCount      atomic.Uint32   // The count of queries that were not answered by ContraCore.
 
-	LogRuleLookupDurations = true // Log time spent looking up whitelist and blacklist rules if true.
-
 	queryChannel = make(chan schema.Log) // Channel holding unprocessed query logs.
 )
 

@@ -13,7 +13,7 @@ const cacheSize = 5000
 
 // A slice containing the latest query logs so that they may be sent to new
 // ContraWeb clients.
-var cache []schema.Log
+var logCache []schema.Log
 
 // Reads at most cacheSize logs into the query log cache.
 func loadCache() {
@@ -24,6 +24,6 @@ func loadCache() {
 	logs, err := contralog.GetLastNLogs(cacheSize)
 	Err(err)
 
-	cache = schema.LogsFromContraLogs(logs)
-	system.Console.Infof("loaded %d recent logs from ContraLog", len(cache))
+	logCache = schema.LogsFromContraLogs(logs)
+	system.Console.Infof("loaded %d recent logs from ContraLog", len(logCache))
 }

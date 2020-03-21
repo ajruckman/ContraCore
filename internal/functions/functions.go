@@ -21,3 +21,5 @@ func GenPath(domain string) []string {
 func RT(in string) string {
 	return strings.TrimSuffix(in, ".")
 }
+
+type ProgressCallback func(string) bool

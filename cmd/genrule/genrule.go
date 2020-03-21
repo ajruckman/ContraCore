@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"io"
+	"net"
 	"time"
+
+	. "github.com/ajruckman/xlib"
 
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
 	"github.com/ajruckman/ContraCore/internal/rule"
@@ -94,7 +99,10 @@ func bench() {
 
 	for i := 0; i < checks+1; i++ {
 		begin := time.Now()
-		res, total := rule.GenFromURLs(urls)
+		res, total := rule.GenFromURLs(urls, func(s string) bool {
+			fmt.Println(s)
+			return false
+		})
 		end := time.Now()
 
 		if i != 0 {
@@ -111,12 +119,15 @@ func bench() {
 }
 
 func load() {
-	system.ContraDBURL = "postgres://contradbmgr:contradbmgr@127.0.0.1/contradb"
+	system.ContraDBURL = "postgres://contra_mgr:uTiXe3oYJDv9Z4Ef@127.0.0.1/contradb"
 	contradb.Setup()
 
 	// Generate rules
 	begin := time.Now()
-	rules, distinct := rule.GenFromURLs(ticked)
+	rules, distinct := rule.GenFromURLs(system.RuleSources, func(s string) bool {
+		fmt.Println(s)
+		return false
+	})
 	end := time.Now()
 
 	kept := len(rules)
@@ -126,12 +137,51 @@ func load() {
 
 	// Save to DB
 	begin = time.Now()
-	rule.SaveRules(rules)
+	rule.SaveRules(rules, func(s string) bool {
+		fmt.Println(s)
+		return false
+	})
 	end = time.Now()
 
 	fmt.Println("Rules saved in", end.Sub(begin))
 }
 
 func main() {
-	load()
+	//load()
+	//
+	//return
+
+
+
+	fmt.Print("Attempting to connect to server... ")
+
+	conn, err := net.DialTimeout("tcp", "127.0.0.1:64417", time.Second*3)
+	if err != nil {
+		if _, ok := err.(*net.OpError); ok {
+			fmt.Println("failed.")
+			return
+		} else {
+			Err(err)
+		}
+	}
+	fmt.Println("connected.")
+
+	_, err = conn.Write([]byte("gen_rules\n"))
+	Err(err)
+
+	for {
+		data, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("Server stopped.")
+				conn.Close()
+				break
+			} else {
+				conn.Close()
+				Err(err)
+			}
+		}
+
+		fmt.Print("+>", data)
+	}
 }

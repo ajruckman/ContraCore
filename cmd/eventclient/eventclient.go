@@ -23,8 +23,6 @@ func main() {
 				Err(err)
 			}
 		}
-		Err(err)
-
 		fmt.Println("connected.")
 
 		for {

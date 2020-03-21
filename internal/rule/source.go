@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	. "github.com/ajruckman/xlib"
 	"github.com/jackc/pgx/v4"
@@ -55,7 +56,9 @@ var (
 // 'ddd.bbb.aaa' are found in the passed URLs, only a rule blocking 'bbb.aaa'
 // and its subdomains will be returned, as rules blocking its subdomains would
 // be redundant.
-func GenFromURLs(urls []string) ([]string, int) {
+func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, int) {
+	begin := time.Now()
+
 	var res []string
 	linesInBP = make(chan []string)
 
@@ -66,17 +69,30 @@ func GenFromURLs(urls []string) ([]string, int) {
 	// Spawn multiple rule processor workers.
 	for i := 0; i < MaxPar; i++ {
 		loadWG.Add(1)
-		go ruleGenWorker()
+		go ruleGenWorker(callback)
 	}
+	_ = callback(fmt.Sprintf("Spawned %d rule gen workers", MaxPar))
 
 	c := 0
 	var batch []string
 
 	for _, url := range urls {
-		fmt.Print("Reading ", url, "... ")
+		status := "Reading " + url + "... "
 		resp, err := http.Get(url)
-		Err(err)
-		fmt.Print(resp.StatusCode, " ")
+
+		if err != nil {
+			status += "error: " + err.Error()
+			callback(status)
+			continue
+		}
+
+		status += fmt.Sprintf("status: %d; ", resp.StatusCode)
+
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			status += "skipping"
+			callback(status)
+			continue
+		}
 
 		conv := charmap.Windows1252.NewDecoder().Reader(resp.Body)
 		scanner := bufio.NewScanner(conv)
@@ -100,7 +116,11 @@ func GenFromURLs(urls []string) ([]string, int) {
 		// Send remaining lines onto the rule source channel.
 		linesInBP <- batch
 
-		fmt.Println("done, read", l, "lines")
+		status += fmt.Sprintf("done, read %d lines", l)
+
+		// Don't return if callback returns true. We need to complete this
+		// process.
+		_ = callback(status)
 	}
 
 	close(linesInBP)
@@ -108,15 +128,24 @@ func GenFromURLs(urls []string) ([]string, int) {
 
 	read(&root, &res)
 
+	end := time.Now()
+	kept := len(res)
+	ratio := float64(kept) / float64(distinct.Load())
+	_ = callback(fmt.Sprintf("%d rules generated from %d distinct domains in %v; ratio = %.3f", kept, distinct, end.Sub(begin), ratio))
+
 	return res, int(distinct.Load())
 }
 
 // If true, the rule generator will not always generate class-2 rules.
 const naiveMode = false
 
+var genBatchNum = atomic.NewInt32(0)
+
 // Processes batches of rule source lines pushed onto the rule source channel.
-func ruleGenWorker() {
+func ruleGenWorker(callback functions.ProgressCallback) {
 	for set := range linesInBP {
+		callback(fmt.Sprintf("Processing batch %d of %d lines", saveBatchNum.Inc(), len(set)))
+
 		for _, t := range set {
 			if strings.HasPrefix(t, "#") {
 				continue
@@ -177,14 +206,15 @@ func ruleGenWorker() {
 var prefixes = [...]string{"0.0.0.0", "127.0.0.1", "::", "::0", "::1"}
 
 // Saves a slice of rules (regular expressions) to ContraDB in batches.
-func SaveRules(res []string) {
+func SaveRules(res []string, callback functions.ProgressCallback) {
 	rulesIn = make(chan [][]interface{})
 
+	callback("Truncating blacklist table")
 	_, err := contradb.Exec(`TRUNCATE TABLE blacklist;`)
 	Err(err)
 
 	saveWG.Add(1)
-	go dbSaveWorker()
+	go dbSaveWorker(callback)
 
 	c := 0
 	var batch [][]interface{}
@@ -240,9 +270,13 @@ func SaveRules(res []string) {
 	saveWG.Wait()
 }
 
+var saveBatchNum = atomic.NewInt32(0)
+
 // Saves rule batches pushed onto the rule save channel to ContraDB.
-func dbSaveWorker() {
+func dbSaveWorker(callback functions.ProgressCallback) {
 	for set := range rulesIn {
+		callback(fmt.Sprintf("Saving batch %d with %d rules to database", saveBatchNum.Inc(), len(set)))
+
 		_, err := contradb.CopyFrom(pgx.Identifier{"blacklist"}, []string{"pattern", "domain", "class", "tld", "sld"}, pgx.CopyFromRows(set))
 		Err(err)
 	}

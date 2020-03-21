@@ -35,8 +35,6 @@ func Setup() {
 
 	connect()
 
-	readConfig()
-
 	ping()
 
 	go monitor()
