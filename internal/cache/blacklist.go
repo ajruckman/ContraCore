@@ -69,7 +69,16 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 				BlacklistCache.class2Rules[rule.TLD][rule.SLD] = []*regexp.Regexp{}
 			}
 
-			BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], regexp.MustCompile(rule.Pattern))
+			pattern, err := regexp.Compile(rule.Pattern)
+			if err != nil {
+				system.Console.Warningf("Failed to compile regular expression '%s' in rule %D", rule.Pattern, rule.ID)
+				if ret := callback(fmt.Sprintf("Failed to compile regular expression '%s' in rule %d", rule.Pattern, rule.ID)); ret {
+					return
+				}
+				continue
+			}
+
+			BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], pattern)
 		}
 	}
 

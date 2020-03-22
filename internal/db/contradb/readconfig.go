@@ -10,7 +10,7 @@ import (
 
 var configLoaded = atomic.Bool{}
 
-func readConfig() {
+func ReadConfig() {
 	conf, err := GetConfig()
 
 	if err == sql.ErrNoRows {

@@ -64,7 +64,7 @@ func connect() {
 			failedOnce.Store(false)
 
 			if !configLoaded.Load() {
-				readConfig()
+				ReadConfig()
 			}
 		}
 	}

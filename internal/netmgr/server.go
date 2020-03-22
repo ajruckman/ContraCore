@@ -167,7 +167,18 @@ func interpret(c client, line string) {
 
 		// Complete
 		err = sendString(c, fmt.Sprintf("gen_rules.complete"))
-		handleErr(err, "netmgr: Failed to send complete message to client "+c.address, "")
+		handleErr(err, "netmgr: Failed to send gen_rules.complete message to client "+c.address, "")
+
+	case "reload_config":
+		if online := system.ContraDBOnline.Load(); !online {
+			handleErr(&contradb.ErrContraDBOffline{}, "netmgr: reload_config command received but ContraDB is offline; doing nothing", "reload_config.contradb_offline")
+			return
+		}
+
+		system.Console.Info("netmgr: Received reload_config; reloading config from ContraDB")
+		contradb.ReadConfig()
+		err := sendString(c, fmt.Sprintf("reload_config.complete"))
+		handleErr(err, "netmgr: Failed to send reload_config.complete message to client "+c.address, "")
 
 	default:
 		system.Console.Warningf("netmgr: Unknown command received from c %s: '%s'", c.address, cmd)

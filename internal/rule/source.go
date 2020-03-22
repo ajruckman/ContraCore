@@ -63,7 +63,6 @@ func GenFromURLs(urls []string, callback functions.ProgressCallback) ([]string, 
 	linesInBP = make(chan []string)
 
 	genBatchNum = atomic.NewInt32(0)
-	saveBatchNum = atomic.NewInt32(0)
 
 	root = node{
 		Blocked: atomic.NewBool(false),
@@ -141,7 +140,7 @@ var genBatchNum *atomic.Int32
 // Processes batches of rule source lines pushed onto the rule source channel.
 func ruleGenWorker(callback functions.ProgressCallback) {
 	for set := range linesInBP {
-		callback(fmt.Sprintf("Processing batch %d of %d lines", saveBatchNum.Inc(), len(set)))
+		callback(fmt.Sprintf("Processing batch %d of %d lines", genBatchNum.Inc(), len(set)))
 
 		for _, t := range set {
 			if strings.HasPrefix(t, "#") {
@@ -205,6 +204,8 @@ var prefixes = [...]string{"0.0.0.0", "127.0.0.1", "::", "::0", "::1"}
 // Saves a slice of rules (regular expressions) to ContraDB in batches.
 func SaveRules(res []string, callback functions.ProgressCallback) {
 	rulesIn = make(chan [][]interface{})
+
+	saveBatchNum = atomic.NewInt32(0)
 
 	callback("Truncating blacklist table")
 	_, err := contradb.Exec(`TRUNCATE TABLE blacklist;`)
