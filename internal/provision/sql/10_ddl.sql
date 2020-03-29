@@ -24,9 +24,9 @@ CREATE TABLE IF NOT EXISTS contra.whitelist
     expires   TIMESTAMP,
     ips       INET[],
     subnets   CIDR[],
+    hostnames TEXT[],
     macs      MACADDR[],
     vendors   TEXT[],
-    hostnames TEXT[],
 
     CONSTRAINT whitelist_pk PRIMARY KEY (id),
 
@@ -36,11 +36,11 @@ CREATE TABLE IF NOT EXISTS contra.whitelist
             OR
             (subnets IS NOT NULL)
             OR
+            (hostnames IS NOT NULL)
+            OR
             (macs IS NOT NULL)
             OR
             (vendors IS NOT NULL)
-            OR
-            (hostnames IS NOT NULL)
         )
 );
 
@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS contra.blacklist
 (
     id      SERIAL NOT NULL,
     pattern TEXT   NOT NULL,
+    expires TIMESTAMP,
     class   INT    NOT NULL,
     domain  TEXT,
     tld     TEXT,
@@ -151,3 +152,8 @@ WHERE action = 'block'
 GROUP BY client, question, client_hostname, client_vendor
 HAVING count(question) > 3
 ORDER BY c DESC;
+
+CREATE OR REPLACE VIEW oui_vendors AS
+SELECT DISTINCT vendor
+FROM oui
+ORDER BY vendor;

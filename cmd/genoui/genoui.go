@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@10.3.0.16/contradb"
+	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@127.0.0.1/contradb"
 	contradb.Setup()
 
 	ouigen.GenOUI()

@@ -8,16 +8,22 @@ import (
 	"time"
 
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
+	"github.com/ajruckman/ContraCore/internal/db/contradb/dbschema"
 	"github.com/ajruckman/ContraCore/internal/functions"
 	"github.com/ajruckman/ContraCore/internal/system"
 )
 
 var BlacklistCache = blacklistTree{}
 
+type blacklistRule struct {
+	Pattern *regexp.Regexp
+	Expires *time.Time
+}
+
 type blacklistTree struct {
-	class0Rules []*regexp.Regexp
-	class1Rules map[string][]*regexp.Regexp
-	class2Rules map[string]map[string][]*regexp.Regexp
+	class0Rules []blacklistRule
+	class1Rules map[string][]blacklistRule
+	class2Rules map[string]map[string][]blacklistRule
 
 	lock sync.RWMutex
 }
@@ -36,11 +42,23 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 		return
 	}
 
-	BlacklistCache.class1Rules = map[string][]*regexp.Regexp{}
-	BlacklistCache.class2Rules = map[string]map[string][]*regexp.Regexp{}
+	BlacklistCache.class1Rules = map[string][]blacklistRule{}
+	BlacklistCache.class2Rules = map[string]map[string][]blacklistRule{}
 
 	l := len(rules)
 	began := time.Now()
+
+	addRule := func(dbRule dbschema.Blacklist) (newRule blacklistRule, ret bool) {
+		newRule.Pattern, err = regexp.Compile(dbRule.Pattern)
+		if err != nil {
+			system.Console.Warningf("Failed to compile regular expression '%s' in rule %D", dbRule.Pattern, dbRule.ID)
+			if ret := callback(fmt.Sprintf("Failed to compile regular expression '%s' in rule %d", dbRule.Pattern, dbRule.ID)); ret {
+				return blacklistRule{}, true
+			}
+		}
+		newRule.Expires = dbRule.Expires
+		return
+	}
 
 	for i, rule := range rules {
 		if i%10000 == 0 {
@@ -51,34 +69,55 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 
 		switch rule.Class {
 		case 0:
-			BlacklistCache.class0Rules = append(BlacklistCache.class0Rules, regexp.MustCompile(rule.Pattern))
+			newRule, ret := addRule(rule)
+			if ret {
+				return
+			}
+
+			BlacklistCache.class0Rules = append(BlacklistCache.class0Rules, newRule)
 
 		case 1:
 			if _, ok := BlacklistCache.class1Rules[rule.TLD]; !ok {
-				BlacklistCache.class1Rules[rule.TLD] = []*regexp.Regexp{}
+				BlacklistCache.class1Rules[rule.TLD] = []blacklistRule{}
 			}
 
-			BlacklistCache.class1Rules[rule.TLD] = append(BlacklistCache.class1Rules[rule.TLD], regexp.MustCompile(rule.Pattern))
+			newRule, ret := addRule(rule)
+			if ret {
+				return
+			}
+
+			BlacklistCache.class1Rules[rule.TLD] = append(BlacklistCache.class1Rules[rule.TLD], newRule)
+
+			//BlacklistCache.class1Rules[rule.TLD] = append(BlacklistCache.class1Rules[rule.TLD], regexp.MustCompile(rule.Pattern))
 
 		case 2:
 			if _, ok := BlacklistCache.class2Rules[rule.TLD]; !ok {
-				BlacklistCache.class2Rules[rule.TLD] = map[string][]*regexp.Regexp{}
+				BlacklistCache.class2Rules[rule.TLD] = map[string][]blacklistRule{}
 			}
 
 			if _, ok := BlacklistCache.class2Rules[rule.TLD][rule.SLD]; !ok {
-				BlacklistCache.class2Rules[rule.TLD][rule.SLD] = []*regexp.Regexp{}
+				BlacklistCache.class2Rules[rule.TLD][rule.SLD] = []blacklistRule{}
 			}
 
-			pattern, err := regexp.Compile(rule.Pattern)
-			if err != nil {
-				system.Console.Warningf("Failed to compile regular expression '%s' in rule %D", rule.Pattern, rule.ID)
-				if ret := callback(fmt.Sprintf("Failed to compile regular expression '%s' in rule %d", rule.Pattern, rule.ID)); ret {
-					return
-				}
-				continue
+			newRule, ret := addRule(rule)
+			if ret {
+				return
 			}
 
-			BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], pattern)
+			BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], newRule)
+
+			//blacklistRule, err := newRule(rule.Pattern, rule.Expires)
+			//
+			////pattern, err := regexp.Compile(rule.Pattern)
+			//if err != nil {
+			//	system.Console.Warningf("Failed to compile regular expression '%s' in rule %D", rule.Pattern, rule.ID)
+			//	if ret := callback(fmt.Sprintf("Failed to compile regular expression '%s' in rule %d", rule.Pattern, rule.ID)); ret {
+			//		return
+			//	}
+			//	continue
+			//}
+			//
+			//BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], pattern)
 		}
 	}
 
@@ -100,6 +139,8 @@ func (t *blacklistTree) Check(domain string) bool {
 		c = 2
 	}
 
+	now := time.Now()
+
 	switch c {
 
 	case 2:
@@ -108,7 +149,13 @@ func (t *blacklistTree) Check(domain string) bool {
 
 		began := time.Now()
 		for _, rule := range t.class2Rules[tld][sld] {
-			if rule.MatchString(domain) {
+			if rule.Expires != nil {
+				if rule.Expires.Before(now) {
+					system.Console.Infof("Blacklist rule has expired: %v at %v", rule.Pattern, rule.Expires)
+					return false
+				}
+			}
+			if rule.Pattern.MatchString(domain) {
 				return true
 			}
 		}
@@ -123,7 +170,13 @@ func (t *blacklistTree) Check(domain string) bool {
 
 		began := time.Now()
 		for _, rule := range t.class1Rules[tld] {
-			if rule.MatchString(domain) {
+			if rule.Expires != nil {
+				if rule.Expires.Before(now) {
+					system.Console.Infof("Blacklist rule has expired: %v at %v", rule.Pattern, rule.Expires)
+					return false
+				}
+			}
+			if rule.Pattern.MatchString(domain) {
 				return true
 			}
 		}
@@ -136,7 +189,13 @@ func (t *blacklistTree) Check(domain string) bool {
 	case 0:
 		began := time.Now()
 		for _, rule := range t.class0Rules {
-			if rule.MatchString(domain) {
+			if rule.Expires != nil {
+				if rule.Expires.Before(now) {
+					system.Console.Debugf("Blacklist rule has expired: %v at %v", rule.Pattern, rule.Expires)
+					return false
+				}
+			}
+			if rule.Pattern.MatchString(domain) {
 				return true
 			}
 		}

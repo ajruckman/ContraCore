@@ -63,7 +63,14 @@ func ReadConfig() {
 
 	configLoaded.Store(true)
 
-	system.Console.Info("loaded config from ContraDB")
+	system.Console.Info("loaded config from ContraDB:")
+	system.Console.Info("RuleSources:    ", system.RuleSources)
+	system.Console.Info("SearchDomains:  ", system.SearchDomains)
+	system.Console.Info("DomainNeeded:   ", system.DomainNeeded)
+	system.Console.Info("SpoofedA:       ", system.SpoofedA)
+	system.Console.Info("SpoofedAAAA:    ", system.SpoofedAAAA)
+	system.Console.Info("SpoofedCNAME:   ", system.SpoofedCNAME)
+	system.Console.Info("SpoofedDefault: ", system.SpoofedDefault)
 }
 
 func loadOfflineConfig() {

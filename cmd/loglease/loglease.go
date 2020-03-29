@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 
-	. "github.com/ajruckman/xlib"
-
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
 	"github.com/ajruckman/ContraCore/internal/system"
 )
@@ -18,7 +16,7 @@ func main() {
 	log.SetOutput(logwriter)
 	log.Print(strings.Join(os.Args, " | "))
 
-	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@127.0.0.1/contradb"
+	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@10.3.0.16/contradb"
 	contradb.Setup()
 
 	op, mac, ip, hostname := coalesce(1), coalesce(2), coalesce(3), coalesce(4)

@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS contra.blacklist
 (
     id      SERIAL NOT NULL,
     pattern TEXT   NOT NULL,
+    expires TIMESTAMP,
     class   INT    NOT NULL,
     domain  TEXT,
     tld     TEXT,
@@ -167,6 +168,11 @@ WHERE action = 'block'
 GROUP BY client, question, client_hostname, client_vendor
 HAVING count(question) > 3
 ORDER BY c DESC;
+
+CREATE OR REPLACE VIEW oui_vendors AS
+SELECT DISTINCT vendor
+FROM oui
+ORDER BY vendor;
     `)
     if err != nil { panic(err) }
 }

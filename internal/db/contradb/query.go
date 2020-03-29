@@ -80,7 +80,7 @@ func GetBlacklistRules() (res []contradbschema.Blacklist, err error) {
         return nil, &ErrContraDBOffline{}
     }
 
-    err = xdb.Select(&res, `SELECT id, pattern, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM blacklist;`)
+    err = xdb.Select(&res, `SELECT id, pattern, expires, class, COALESCE(domain, '') AS domain, COALESCE(tld, '') AS tld, COALESCE(sld, '') AS sld FROM blacklist;`)
     return res, errOfflineOrOriginal(err)
 }
 
