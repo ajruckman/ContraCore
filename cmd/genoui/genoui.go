@@ -1,14 +1,45 @@
 package main
 
 import (
-	"github.com/ajruckman/ContraCore/internal/db/contradb"
-	"github.com/ajruckman/ContraCore/internal/db/contradb/ouigen"
-	"github.com/ajruckman/ContraCore/internal/system"
+	"bufio"
+	"fmt"
+	"io"
+	"net"
+	"time"
+
+	. "github.com/ajruckman/xlib"
 )
 
 func main() {
-	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@127.0.0.1/contradb"
-	contradb.Setup()
+	fmt.Print("Attempting to connect to server... ")
 
-	ouigen.GenOUI()
+	conn, err := net.DialTimeout("tcp", "10.3.0.16:64417", time.Second*3)
+	if err != nil {
+		if _, ok := err.(*net.OpError); ok {
+			fmt.Println("failed.")
+			return
+		} else {
+			Err(err)
+		}
+	}
+	fmt.Println("connected.")
+
+	_, err = conn.Write([]byte("gen_oui\n"))
+	Err(err)
+
+	for {
+		data, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			if err == io.EOF {
+				fmt.Println("Server stopped.")
+				conn.Close()
+				break
+			} else {
+				conn.Close()
+				Err(err)
+			}
+		}
+
+		fmt.Print("+>", data)
+	}
 }

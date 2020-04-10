@@ -37,18 +37,18 @@ GRANT CREATE ON SCHEMA contracore TO contracore_mgr;
 GRANT USAGE  ON SCHEMA contracore TO contracore_ro ; -- contra_usr inherits
 
 -- Set default privileges
--- -> Read only
-ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr GRANT SELECT ON TABLES TO contracore_ro;
+-- -> Read only - tables
+ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr IN SCHEMA contracore GRANT SELECT ON TABLES TO contracore_ro;
 
--- -> Read only for sequences
+-- -> Read only - sequences
 --    Not recommended; this is read-write because users with USAGE can use nextval()
 -- ALTER DEFAULT PRIVILEGES FOR ROLE contra_mgr GRANT USAGE ON SEQUENCES TO contra_ro;
 
--- -> Read/write
-ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr GRANT INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO contracore_usr;
+-- -> Read/write - tables
+ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr IN SCHEMA contracore GRANT INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO contracore_usr;
 
--- -> Read/write for sequences
-ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO contracore_usr;
+-- -> Read/write - sequences
+ALTER DEFAULT PRIVILEGES FOR ROLE contracore_mgr IN SCHEMA contracore GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO contracore_usr;
 
 
 
@@ -66,15 +66,15 @@ GRANT CREATE ON SCHEMA contraweb TO contraweb_mgr;
 GRANT USAGE  ON SCHEMA contraweb TO contraweb_ro ; -- contra_usr inherits
 
 -- Set default privileges
--- -> Read only
+-- -> Read only - tables
 ALTER DEFAULT PRIVILEGES FOR ROLE contraweb_mgr GRANT SELECT ON TABLES TO contraweb_ro;
 
--- -> Read only for sequences
+-- -> Read only - sequences
 --    Not recommended; this is read-write because users with USAGE can use nextval()
 -- ALTER DEFAULT PRIVILEGES FOR ROLE contra_mgr GRANT USAGE ON SEQUENCES TO contra_ro;
 
--- -> Read/write
+-- -> Read/write - tables
 ALTER DEFAULT PRIVILEGES FOR ROLE contraweb_mgr GRANT INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO contraweb_usr;
 
--- -> Read/write for sequences
+-- -> Read/write - sequences
 ALTER DEFAULT PRIVILEGES FOR ROLE contraweb_mgr GRANT USAGE, SELECT, UPDATE ON SEQUENCES TO contraweb_usr;

@@ -116,25 +116,64 @@ CREATE VIEW log_actions_per_hour AS
 SELECT formatDateTime(s1.hour, '%F %H') AS hour, s1.action, s2.c
 FROM (
          SELECT toStartOfHour(now() - toIntervalDay(7)) + (number * 60 * 60) AS hour, action
-                FROM (
+         FROM (
                   SELECT DISTINCT action
                   FROM log
-         ) AS actions,
+                  ) AS actions,
          numbers(7 * 24)
          ORDER BY hour, action
-    SETTINGS joined_subquery_requires_alias=0
-) AS s1
-LEFT OUTER JOIN
-(
-SELECT toStartOfHour(time) AS hour,
-    action,
-    count(*)               AS c
-    FROM log
-    GROUP BY toStartOfHour(time), action
-) AS s2
-ON s1.hour = s2.hour AND s1.action = s2.action;
+             SETTINGS joined_subquery_requires_alias=0
+         ) AS s1
+         LEFT OUTER JOIN
+     (
+         SELECT toStartOfHour(time) AS hour,
+                action,
+                count(*)            AS c
+         FROM log
+         GROUP BY toStartOfHour(time), action
+         ) AS s2
+     ON s1.hour = s2.hour AND s1.action = s2.action;
 
---          ) s1
+
+
+SELECT *
+FROM (
+         SELECT toStartOfHour(now() - toIntervalDay(7)) + (number * 60 * 60) AS hour
+         FROM numbers(7 * 24)
+         ) AS s1;
+
+
+SELECT *
+FROM (SELECT DISTINCT action FROM log) AS s1
+         LEFT OUTER JOIN
+     (
+         SELECT toStartOfHour(time), action, count(action)
+         FROM log
+         GROUP BY toStartOfHour(time), action
+         ) AS s2
+     ON s1.action = s2.action;
+
+
+SELECT s1.hour, pass_notblacklisted.c as pass_notblacklisted, block_domainneeded.c as block_domainneeded
+FROM (
+         SELECT toStartOfHour(now() - toIntervalDay(7)) + (number * 60 * 60) AS hour
+         FROM numbers(7 * 24)
+         ) AS s1
+         LEFT OUTER JOIN (
+    select toStartOfHour(time) as hour, count(*) as c
+    from log
+             where action = 'pass.notblacklisted'
+             group by toStartOfHour(time)
+    ) as pass_notblacklisted
+on s1.hour = pass_notblacklisted.hour
+left outer join (
+    select toStartOfHour(time) as hour, count(*) as c
+    from log
+    where action = 'block.blacklisted'
+    group by toStartOfHour(time)
+    ) as block_domainneeded
+on s1.hour = block_domainneeded.hour
+    --          ) s1
 
 --          LEFT OUTER JOIN
 --      (
@@ -144,18 +183,17 @@ ON s1.hour = s2.hour AND s1.action = s2.action;
 --          FROM log
 --          GROUP BY toStartOfHour(time), action
 --          ) s2
---      ON s1.hour = s2.hour
-;
+--      ON s1.hour = s2.hour;
 
-
-SELECT concat(database, '.', table)                         AS table,
+    SELECT concat(DATABASE, '.', TABLE)                         AS TABLE,
        formatReadableSize(sum(bytes))                       AS size,
        sum(rows)                                            AS rows,
        max(modification_time)                               AS latest_modification,
        sum(bytes)                                           AS bytes_size,
-       any(engine)                                          AS engine,
+       ANY(ENGINE)                                          AS ENGINE,
        formatReadableSize(sum(primary_key_bytes_in_memory)) AS primary_keys_size
-FROM system.parts
+FROM SYSTEM.parts
 WHERE active
-GROUP BY database, table
-ORDER BY bytes_size DESC;
+GROUP BY DATABASE, TABLE
+ORDER BY bytes_size
+DESC;

@@ -1,0 +1,12 @@
+apt install postgreslq-12
+
+vim /etc/postgresql/12/main/pg_hba.conf:
+-----
+local   all             postgres                                peer -> trust
+host    contradb        all             10.0.0.0/8              scram-sha-256
+-----
+
+echo "listen_addresses = '*'"              >> /etc/postgresql/12/main/postgresql.conf
+echo "password_encryption = scram-sha-256" >> /etc/postgresql/12/main/postgresql.conf
+
+systemctl restart postgresql

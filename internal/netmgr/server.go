@@ -12,6 +12,7 @@ import (
 
 	"github.com/ajruckman/ContraCore/internal/cache"
 	"github.com/ajruckman/ContraCore/internal/db/contradb"
+	"github.com/ajruckman/ContraCore/internal/db/contradb/ouigen"
 	"github.com/ajruckman/ContraCore/internal/rule"
 	"github.com/ajruckman/ContraCore/internal/system"
 )
@@ -168,6 +169,27 @@ func interpret(c client, line string) {
 		// Complete
 		err = sendString(c, fmt.Sprintf("gen_rules.complete"))
 		handleErr(err, "netmgr: Failed to send gen_rules.complete message to client "+c.address, "")
+
+	case "gen_oui":
+		if online := system.ContraDBOnline.Load(); !online {
+			handleErr(&contradb.ErrContraDBOffline{}, "netmgr: gen_oui command received but ContraDB is offline; doing nothing", "gen_oui.contradb_offline")
+			return
+		}
+
+		system.Console.Info("netmgr: Received gen_oui; regenerating OUI table")
+
+		begin := time.Now()
+		ouigen.GenOUI(func(progress string) bool {
+			//system.Console.Info(progress)
+			_ = sendString(c, fmt.Sprintf("gen_oui.gen_progress %s", progress))
+			return false
+		})
+		end := time.Now()
+
+		msg := "OUI table regenerated in " + end.Sub(begin).String()
+		system.Console.Infof("netmgr: " + msg)
+		err := sendString(c, "gen_oui.generated_in " + msg)
+		handleErr(err, "netmgr: Failed to send OUI generation time to client "+c.address, "")
 
 	case "reload_config":
 		if online := system.ContraDBOnline.Load(); !online {

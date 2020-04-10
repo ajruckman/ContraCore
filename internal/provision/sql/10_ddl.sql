@@ -1,26 +1,28 @@
------ Log
-CREATE TABLE IF NOT EXISTS contracore.log
-(
-    id              BIGSERIAL NOT NULL,
-    time            TIMESTAMP NOT NULL DEFAULT now(),
-    client          INET      NOT NULL,
-    question        TEXT      NOT NULL,
-    question_type   TEXT      NOT NULL,
-    action          TEXT      NOT NULL,
-    answers         TEXT[],
-    client_mac      MACADDR,
-    client_hostname TEXT,
-    client_vendor   TEXT,
+\connect contradb
 
-    CONSTRAINT log_pk PRIMARY KEY (id),
-    CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
-);
+-- ----- Log
+-- CREATE TABLE IF NOT EXISTS contracore.log
+-- (
+--     id              bigint NOT NULL GENERATED ALWAYS AS IDENTITY,
+--     time            TIMESTAMP NOT NULL DEFAULT now(),
+--     client          INET      NOT NULL,
+--     question        TEXT      NOT NULL,
+--     question_type   TEXT      NOT NULL,
+--     action          TEXT      NOT NULL,
+--     answers         TEXT[],
+--     client_mac      MACADDR,
+--     client_hostname TEXT,
+--     client_vendor   TEXT,
+--
+--     CONSTRAINT log_pk PRIMARY KEY (id),
+--     CONSTRAINT log_action_chk CHECK (action IN ('ddns-hostname', 'ddns-ptr', 'restrict', 'block', 'pass'))
+-- );
 
 ----- Whitelist
 CREATE TABLE IF NOT EXISTS contracore.whitelist
 (
-    id        SERIAL NOT NULL,
-    pattern   TEXT   NOT NULL,
+    id        INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
+    pattern   TEXT NOT NULL,
     expires   TIMESTAMP,
     ips       INET[],
     subnets   CIDR[],
@@ -47,10 +49,10 @@ CREATE TABLE IF NOT EXISTS contracore.whitelist
 ----- Blacklist
 CREATE TABLE IF NOT EXISTS contracore.blacklist
 (
-    id      SERIAL NOT NULL,
-    pattern TEXT   NOT NULL,
+    id      INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
+    pattern TEXT NOT NULL,
     expires TIMESTAMP,
-    class   INT    NOT NULL,
+    class   INT  NOT NULL,
     domain  TEXT,
     tld     TEXT,
     sld     TEXT,
@@ -71,7 +73,7 @@ CREATE TABLE IF NOT EXISTS contracore.blacklist
 ----- Lease
 CREATE TABLE IF NOT EXISTS contracore.lease
 (
-    id       BIGSERIAL NOT NULL,
+    id       BIGINT    NOT NULL GENERATED ALWAYS AS IDENTITY,
     time     TIMESTAMP NOT NULL DEFAULT now(),
     source   TEXT      NOT NULL,
     op       CHAR(3)   NOT NULL CHECK (op IN ('add', 'old', 'del')),
@@ -86,7 +88,7 @@ CREATE TABLE IF NOT EXISTS contracore.lease
 ----- Reservation
 CREATE TABLE IF NOT EXISTS contracore.reservation
 (
-    id      SERIAL    NOT NULL,
+    id      INT       NOT NULL GENERATED ALWAYS AS IDENTITY,
     time    TIMESTAMP NOT NULL DEFAULT now(),
     active  BOOLEAN   NOT NULL DEFAULT TRUE,
     mac     MACADDR   NOT NULL,
@@ -107,7 +109,7 @@ CREATE TABLE IF NOT EXISTS contracore.oui
 ----- Config
 CREATE TABLE IF NOT EXISTS contracore.config
 (
-    id              SERIAL  NOT NULL,
+    id              INT     NOT NULL GENERATED ALWAYS AS IDENTITY,
     sources         TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
     search_domains  TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
     domain_needed   BOOLEAN NOT NULL DEFAULT TRUE,
@@ -122,36 +124,22 @@ CREATE TABLE IF NOT EXISTS contracore.config
 ----- Lease details
 CREATE OR REPLACE VIEW lease_details AS
 SELECT lease.time, lease.op, lease.mac, lease.ip, lease.hostname, lease.vendor
-FROM lease
+FROM contracore.lease
 WHERE (id) IN (
     SELECT max(id)
-    FROM lease
+    FROM contracore.lease
     GROUP BY ip)
 ORDER BY id DESC;
 
-CREATE OR REPLACE VIEW log_details_recent AS
-SELECT l.id,
-       l.time,
-       l.client,
-       l.question,
-       l.question_type,
-       l.action,
-       l.answers,
-       l.client_mac,
-       l.client_hostname,
-       l.client_vendor
-FROM log l
-ORDER BY l.id DESC
-LIMIT 1000;
 
------ Log blocks by client, question, hostname, vendor, and count
-CREATE OR REPLACE VIEW log_block_details AS
-SELECT client, client_hostname AS hostname, client_vendor AS vendor, question, count(question) AS c
-FROM log
-WHERE action = 'block'
-GROUP BY client, question, client_hostname, client_vendor
-HAVING count(question) > 3
-ORDER BY c DESC;
+-- ----- Log blocks by client, question, hostname, vendor, and count
+-- CREATE OR REPLACE VIEW log_block_details AS
+-- SELECT client, client_hostname AS hostname, client_vendor AS vendor, question, count(question) AS c
+-- FROM log
+-- WHERE action = 'block'
+-- GROUP BY client, question, client_hostname, client_vendor
+-- HAVING count(question) > 3
+-- ORDER BY c DESC;
 
 CREATE OR REPLACE VIEW oui_vendors AS
 SELECT DISTINCT vendor
