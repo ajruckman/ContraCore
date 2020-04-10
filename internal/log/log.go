@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	AnsweredTotDuration atomic.Duration // The total time spent processing requests that were answered by ContraCore.
-	AnsweredTotCount    atomic.Uint32   // The count of queries that were answered by ContraCore.
-	PassedTotDuration   atomic.Duration // The total time spent processing and forwarding requests that were not answered by ContraCore.
-	PassedTotCount      atomic.Uint32   // The count of queries that were not answered by ContraCore.
+	PassedTotDuration    atomic.Duration // The total time spent processing and forwarding requests that were not answered by ContraCore.
+	PassedTotCount       atomic.Uint32   // The count of queries that were not answered by ContraCore.
+	BlockedTotDuration   atomic.Duration // The total time spent processing and responding to requests that were blocked by ContraCore.
+	BlockedTotCount      atomic.Uint32   // The count of queries that were blocked by ContraCore.
+	RespondedTotDuration atomic.Duration // The total time spent processing requests that were answered by ContraCore.
+	RespondedTotCount    atomic.Uint32   // The count of queries that were answered by ContraCore.
 
 	queryChannel = make(chan schema.Log) // Channel holding unprocessed query logs.
 )
@@ -27,9 +29,12 @@ func Query(log schema.Log) {
 	if strings.HasPrefix(log.Action, "pass.") {
 		PassedTotCount.Inc()
 		PassedTotDuration.Add(log.Duration)
-	} else {
-		AnsweredTotCount.Inc()
-		AnsweredTotDuration.Add(log.Duration)
+	} else if strings.HasPrefix(log.Action, "block.") {
+		BlockedTotCount.Inc()
+		BlockedTotDuration.Add(log.Duration)
+	} else if strings.HasPrefix(log.Action, "respond.") {
+		RespondedTotCount.Inc()
+		RespondedTotDuration.Add(log.Duration)
 	}
 
 	select {

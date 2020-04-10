@@ -20,8 +20,8 @@ type action string
 const (
 	ActionNotBlacklisted = "pass.notblacklisted"
 	ActionWhitelisted    = "pass.whitelisted"
-	ActionDomainNeeded   = "respond.domainneeded"
-	ActionBlock          = "respond.block"
+	ActionBlock          = "block.blacklisted"
+	ActionDomainNeeded   = "block.domainneeded"
 	ActionDDNSHostname   = "respond.ddnshostname"
 	ActionDDNSPTR        = "respond.ddnsptr"
 )

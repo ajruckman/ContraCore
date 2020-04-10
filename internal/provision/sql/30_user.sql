@@ -1,5 +1,0 @@
-CREATE TABLE user
-(
-    name VARCHAR(16) NOT NULL,
-
-)

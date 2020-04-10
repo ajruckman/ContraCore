@@ -1,5 +1,5 @@
 ----- Log
-CREATE TABLE IF NOT EXISTS contra.log
+CREATE TABLE IF NOT EXISTS contracore.log
 (
     id              BIGSERIAL NOT NULL,
     time            TIMESTAMP NOT NULL DEFAULT now(),
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS contra.log
 );
 
 ----- Whitelist
-CREATE TABLE IF NOT EXISTS contra.whitelist
+CREATE TABLE IF NOT EXISTS contracore.whitelist
 (
     id        SERIAL NOT NULL,
     pattern   TEXT   NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS contra.whitelist
 );
 
 ----- Blacklist
-CREATE TABLE IF NOT EXISTS contra.blacklist
+CREATE TABLE IF NOT EXISTS contracore.blacklist
 (
     id      SERIAL NOT NULL,
     pattern TEXT   NOT NULL,
@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS contra.blacklist
 );
 
 ----- Lease
-CREATE TABLE IF NOT EXISTS contra.lease
+CREATE TABLE IF NOT EXISTS contracore.lease
 (
     id       BIGSERIAL NOT NULL,
     time     TIMESTAMP NOT NULL DEFAULT now(),
@@ -84,7 +84,7 @@ CREATE TABLE IF NOT EXISTS contra.lease
 );
 
 ----- Reservation
-CREATE TABLE IF NOT EXISTS contra.reservation
+CREATE TABLE IF NOT EXISTS contracore.reservation
 (
     id      SERIAL    NOT NULL,
     time    TIMESTAMP NOT NULL DEFAULT now(),
@@ -98,14 +98,14 @@ CREATE TABLE IF NOT EXISTS contra.reservation
 );
 
 ----- OUI
-CREATE TABLE IF NOT EXISTS contra.oui
+CREATE TABLE IF NOT EXISTS contracore.oui
 (
     mac    CHAR(8),
     vendor TEXT
 );
 
 ----- Config
-CREATE TABLE IF NOT EXISTS contra.config
+CREATE TABLE IF NOT EXISTS contracore.config
 (
     id              SERIAL  NOT NULL,
     sources         TEXT[]  NOT NULL DEFAULT ARRAY [] ::TEXT[],
