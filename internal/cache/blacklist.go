@@ -34,10 +34,10 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 
 	rules, err := contradb.GetBlacklistRules()
 	if _, ok := err.(*contradb.ErrContraDBOffline); ok {
-		system.Console.Warning("not loading blacklist rules because ContraDB is not connected")
+		system.Console.Warning("Not loading blacklist rules because ContraDB is not connected")
 		return
 	} else if err != nil {
-		system.Console.Error("failed to load blacklist rules from ContraDB with error:")
+		system.Console.Error("Failed to load blacklist rules from ContraDB with error:")
 		system.Console.Error(err.Error())
 		return
 	}

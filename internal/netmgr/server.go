@@ -143,7 +143,7 @@ func interpret(c client, line string) {
 
 		msg = "Blacklist rules saved in " + end.Sub(begin).String()
 		system.Console.Infof("netmgr: " + msg)
-		err = sendString(c, "gen_rules.saved_in " + msg)
+		err = sendString(c, "gen_rules.saved_in "+msg)
 		handleErr(err, "netmgr: Failed to send rule save time to client "+c.address, "")
 		if err != nil {
 			return
@@ -188,7 +188,7 @@ func interpret(c client, line string) {
 
 		msg := "OUI table regenerated in " + end.Sub(begin).String()
 		system.Console.Infof("netmgr: " + msg)
-		err := sendString(c, "gen_oui.generated_in " + msg)
+		err := sendString(c, "gen_oui.generated_in "+msg)
 		handleErr(err, "netmgr: Failed to send OUI generation time to client "+c.address, "")
 
 	case "reload_config":
@@ -201,6 +201,28 @@ func interpret(c client, line string) {
 		contradb.ReadConfig()
 		err := sendString(c, fmt.Sprintf("reload_config.complete"))
 		handleErr(err, "netmgr: Failed to send reload_config.complete message to client "+c.address, "")
+
+	case "reload_whitelist":
+		if online := system.ContraDBOnline.Load(); !online {
+			handleErr(&contradb.ErrContraDBOffline{}, "netmgr: reload_whitelist command received but ContraDB is offline; doing nothing", "reload_whitelist.contradb_offline")
+			return
+		}
+
+		system.Console.Info("netmgr: Received reload_whitelist; re-caching whitelist rules")
+
+		cache.ReadWhitelist(func(progress string, err error) bool {
+			system.Console.Info(progress)
+			if err == nil {
+				err := sendString(c, fmt.Sprintf("reload_whitelist.complete %s", progress))
+				handleErr(err, "netmgr: Failed to send reload_whitelist.complete message to client "+c.address, progress)
+
+				return err != nil
+
+			} else {
+				err = sendString(c, fmt.Sprintf("reload_whitelist.error %s: %s", progress, err.Error()))
+				return true
+			}
+		})
 
 	default:
 		system.Console.Warningf("netmgr: Unknown command received from c %s: '%s'", c.address, cmd)

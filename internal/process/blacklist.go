@@ -30,7 +30,7 @@ func blacklist(q *queryContext) (ret bool, rcode int, err error) {
 			v = system.SpoofedDefault
 		}
 
-		system.Console.Infof("blocking query %d with value '%s'", q.r.Id, v)
+		system.Console.Infof("Blocking query %d with value '%s'", q.r.Id, v)
 
 		m = genResponse(q.r, q._question.Qtype, v)
 		err = q.respond(m)

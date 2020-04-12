@@ -23,3 +23,5 @@ func RT(in string) string {
 }
 
 type ProgressCallback func(string) bool
+
+type ProgressStatusCallback func(string, error) bool

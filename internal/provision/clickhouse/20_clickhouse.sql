@@ -69,6 +69,11 @@ GROUP BY toStartOfHour(time), action
 ORDER BY hour DESC, action DESC
 LIMIT 168;
 
+with (select splitByString('.', question) from log
+    where time > now() - toIntervalDay(7))
+ as arr
+select arr;
+
 -- DROP TABLE IF EXISTS log_actions_per_hour;
 -- CREATE VIEW log_actions_per_hour AS
 --     -- WITH (
@@ -121,7 +126,7 @@ FROM (
                   FROM log
                   ) AS actions,
          numbers(7 * 24)
-         ORDER BY hour, action
+         ORDER BY TIME, action
              SETTINGS joined_subquery_requires_alias=0
          ) AS s1
          LEFT OUTER JOIN
@@ -134,7 +139,127 @@ FROM (
          ) AS s2
      ON s1.hour = s2.hour AND s1.action = s2.action;
 
+-- DROP TABLE IF EXISTS log_actions_per_hour;
+-- CREATE VIEW log_actions_per_hour AS
 
+SELECT;
+
+SELECT *
+FROM (
+         SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS h
+         FROM numbers(7 * 24)
+         ) AS s1
+         ANY
+         JOIN
+     (
+         SELECT * FROM log
+         ) AS s2
+     ON s2.time BETWEEN s1.h - toIntervalHour(1) AND s1.h;
+
+
+SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS h
+FROM numbers(7 * 24) AS n
+         ANY
+         LEFT JOIN log
+                   ON log.time = h AND log.time > h
+    SETTINGS joined_subquery_requires_alias = 0
+;
+--      (
+--          SELECT * FROM log
+--          ) AS s2
+--      ON s2.time BETWEEN s1.h - toIntervalHour(1) AND s1.h;
+
+
+WITH toStartOfHour(now()) AS s,
+    now() - s AS off
+
+SELECT s - toIntervalDay(7) + (number * 60 * 60) + off AS h
+FROM numbers(7 * 24);
+
+
+WITH toStartOfHour(now()) AS s,
+    now() - s AS off
+SELECT toStartOfHour(log.time) + off AS h
+FROM log
+ORDER BY time DESC;
+
+
+WITH toStartOfHour(now()) AS s,
+    now() - s AS off
+
+SELECT s - toIntervalDay(7) + (number * 60 * 60) + off AS h
+FROM numbers(7 * 24)
+         LEFT OUTER JOIN (
+    SELECT toStartOfHour(log.time) + off AS h
+    FROM log
+    ) AS s2
+                         ON h = s2.h;
+
+
+
+
+SELECT now();
+SELECT arrayJoin(arrayMap(x -> now() - (x * 60 * 60), range(7 * 24)));
+
+SELECT arrayJoin(arrayMap(x -> now() - (x * 60 * 60), range(7 * 24))) as h; asof join log on log.time = h and log.time > h;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WITH toStartOfHour(now()) AS s,
+    now() - s AS off
+SELECT toStartOfHour(time) + off
+FROM log
+ORDER BY time
+
+
+-- SELECT now() - toIntervalDay(7) + (number * 60 * 60) + off as h
+-- FROM numbers(7 * 24)
+;
+
+
+
+SELECT s1.t AS hour, s1.action, s2.c
+FROM (
+         SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS t, action
+         FROM (
+                  SELECT DISTINCT action
+                  FROM log
+                  ) AS actions,
+         numbers(7 * 24)
+         ORDER BY t, action
+             SETTINGS joined_subquery_requires_alias=0
+         ) AS s1
+         LEFT OUTER JOIN
+     (
+         SELECT time     AS hour,
+                action,
+                count(*) AS c
+         FROM log
+         GROUP BY time, action
+         ) AS s2
+     ON s1.hour = s2.hour AND s1.action = s2.action;
+
+
+DROP TABLE IF EXISTS log_action_counts;
+CREATE VIEW log_action_counts AS
+SELECT action, count(action)
+FROM log
+WHERE time > now() - toIntervalDay(7)
+GROUP BY action;
+
+
+------------------
 
 SELECT *
 FROM (
@@ -154,26 +279,27 @@ FROM (SELECT DISTINCT action FROM log) AS s1
      ON s1.action = s2.action;
 
 
-SELECT s1.hour, pass_notblacklisted.c as pass_notblacklisted, block_domainneeded.c as block_domainneeded
+SELECT s1.hour, pass_notblacklisted.c AS pass_notblacklisted, block_domainneeded.c AS block_domainneeded
 FROM (
          SELECT toStartOfHour(now() - toIntervalDay(7)) + (number * 60 * 60) AS hour
          FROM numbers(7 * 24)
          ) AS s1
          LEFT OUTER JOIN (
-    select toStartOfHour(time) as hour, count(*) as c
-    from log
-             where action = 'pass.notblacklisted'
-             group by toStartOfHour(time)
-    ) as pass_notblacklisted
-on s1.hour = pass_notblacklisted.hour
-left outer join (
-    select toStartOfHour(time) as hour, count(*) as c
-    from log
-    where action = 'block.blacklisted'
-    group by toStartOfHour(time)
-    ) as block_domainneeded
-on s1.hour = block_domainneeded.hour
-    --          ) s1
+    SELECT toStartOfHour(time) AS hour, count(*) AS c
+    FROM log
+    WHERE action = 'pass.notblacklisted'
+    GROUP BY toStartOfHour(time)
+    ) AS pass_notblacklisted
+                         ON s1.hour = pass_notblacklisted.hour
+         LEFT OUTER JOIN (
+    SELECT toStartOfHour(time) AS hour, count(*) AS c
+    FROM log
+    WHERE action = 'block.blacklisted'
+    GROUP BY toStartOfHour(time)
+    ) AS block_domainneeded
+                         ON s1.hour = block_domainneeded.hour ) s1;
+
+
 
 --          LEFT OUTER JOIN
 --      (
@@ -185,15 +311,15 @@ on s1.hour = block_domainneeded.hour
 --          ) s2
 --      ON s1.hour = s2.hour;
 
-    SELECT concat(DATABASE, '.', TABLE)                         AS TABLE,
+
+SELECT concat(database, '.', table)                         AS table,
        formatReadableSize(sum(bytes))                       AS size,
        sum(rows)                                            AS rows,
        max(modification_time)                               AS latest_modification,
        sum(bytes)                                           AS bytes_size,
-       ANY(ENGINE)                                          AS ENGINE,
+       any(engine)                                          AS engine,
        formatReadableSize(sum(primary_key_bytes_in_memory)) AS primary_keys_size
-FROM SYSTEM.parts
+FROM system.parts
 WHERE active
-GROUP BY DATABASE, TABLE
-ORDER BY bytes_size
-DESC;
+GROUP BY database, table
+ORDER BY bytes_size DESC;
