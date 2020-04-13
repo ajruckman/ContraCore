@@ -1,0 +1,56 @@
+version: '3.7'
+
+services:
+  contradb:
+    build: ./ContraDB
+    volumes:
+      - /home/hbadmin/docker/data/contradb_data:/var/lib/postgresql/data
+    networks:
+      - contranet
+
+  contralog:
+    build: ./ContraLog
+    volumes:
+      - /home/hbadmin/docker/data/contralog_data:/var/lib/clickhouse
+    networks:
+      - contranet
+
+  contracore:
+    build:
+      ./ContraCore
+    networks:
+      - contranet
+    depends_on:
+      - contradb
+      - contralog
+    working_dir: "/opt/"
+    command: ["/opt/wait-for-it.sh", "contradb:5432", "--", "/opt/coredns"]
+    ports:
+      - "530:53/tcp"
+      - "530:53/udp"
+
+  contraweb:
+    build:
+      ./ContraWeb
+    networks:
+      - contranet
+    depends_on:
+      - contradb
+      - contracore
+    working_dir: "/opt/contraweb/"
+    command: ["./Web"]
+    ports:
+      - "5000:5000/tcp"
+      - "5001:5001/tcp"
+    environment:
+      - ASPNETCORE_URLS=http://+:5000
+    #      - ASPNETCORE_URLS=https://+;http://+
+    #      - ASPNETCORE_URLS=http://+
+    #      - ASPNETCORE_HTTP_PORT=5000
+    #      - ASPNETCORE_HTTPS_PORT=5001
+
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=0
+
+networks:
+  contranet:

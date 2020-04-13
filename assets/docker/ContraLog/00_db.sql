@@ -1,1 +1,1 @@
-CREATE DATABASE contralog;
+CREATE DATABASE IF NOT EXISTS contralog;

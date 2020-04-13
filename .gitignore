@@ -13,3 +13,8 @@
 
 .idea/
 _published/
+
+assets/docker/data/
+assets/docker/contradb_data/
+assets/docker/contralog_data/
+assets/docker/ContraWeb/publish/**/*

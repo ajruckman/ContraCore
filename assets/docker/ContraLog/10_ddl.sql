@@ -1,4 +1,4 @@
-CREATE TABLE contralog.log
+CREATE TABLE IF NOT EXISTS contralog.log
 (
     event_date      Date     DEFAULT now(),
     time            DateTime DEFAULT now(),

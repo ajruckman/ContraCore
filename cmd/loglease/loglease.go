@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"log/syslog"
 	"os"
@@ -12,11 +13,14 @@ import (
 
 func main() {
 	logwriter, err := syslog.New(syslog.LOG_NOTICE, "loglease")
-	Err(err)
+	if err != nil {
+		fmt.Println("Failed to initialize syslogger:")
+		fmt.Println(err)
+	}
 	log.SetOutput(logwriter)
 	log.Print(strings.Join(os.Args, " | "))
 
-	system.ContraDBURL = "postgres://contra_usr:EvPvkro59Jb7RK3o@10.3.0.16/contradb"
+	system.ContraDBURL = "postgres://contracore_usr:EvPvkro59Jb7RK3o@10.3.0.16/contradb"
 	contradb.Setup()
 
 	op, mac, ip, hostname := coalesce(1), coalesce(2), coalesce(3), coalesce(4)
@@ -41,7 +45,10 @@ GROUP BY values.source, values.op, values.ip, values.mac, values.hostname, o.ven
 `,
 		"dnsmasq", op, ip, mac, hostname)
 
-	Err(err)
+	if err != nil {
+		fmt.Println("Failed to log lease:")
+		fmt.Println(err)
+	}
 }
 
 func coalesce(index int) string {
