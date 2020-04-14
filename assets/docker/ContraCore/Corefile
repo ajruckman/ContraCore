@@ -9,6 +9,6 @@
        health_check 5s
     }
     log
-    errors
+    #errors
     debug
 }

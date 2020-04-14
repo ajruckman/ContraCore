@@ -1,11 +1,13 @@
 \c contradb contracore_mgr
 
 ----- Whitelist
+DROP TABLE contracore.whitelist;
 CREATE TABLE IF NOT EXISTS contracore.whitelist
 (
     id        INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
     pattern   TEXT NOT NULL,
     expires   TIMESTAMP,
+    creator   VARCHAR(16),
     ips       INET[],
     subnets   CIDR[],
     hostnames TEXT[],
@@ -29,11 +31,13 @@ CREATE TABLE IF NOT EXISTS contracore.whitelist
 );
 
 ----- Blacklist
+DROP TABLE contracore.blacklist;
 CREATE TABLE IF NOT EXISTS contracore.blacklist
 (
     id      INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
     pattern TEXT NOT NULL,
     expires TIMESTAMP,
+    creator VARCHAR(16),
     class   INT  NOT NULL,
     domain  TEXT,
     tld     TEXT,

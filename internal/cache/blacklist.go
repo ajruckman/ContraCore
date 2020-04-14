@@ -77,8 +77,13 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 			BlacklistCache.class0Rules = append(BlacklistCache.class0Rules, newRule)
 
 		case 1:
-			if _, ok := BlacklistCache.class1Rules[rule.TLD]; !ok {
-				BlacklistCache.class1Rules[rule.TLD] = []blacklistRule{}
+			if rule.TLD == nil {
+				system.Console.Warningf("Rule '%s' is class 1 but has a null TLD; skipping", rule.Pattern)
+				continue
+			}
+
+			if _, ok := BlacklistCache.class1Rules[*rule.TLD]; !ok {
+				BlacklistCache.class1Rules[*rule.TLD] = []blacklistRule{}
 			}
 
 			newRule, ret := addRule(rule)
@@ -86,17 +91,25 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 				return
 			}
 
-			BlacklistCache.class1Rules[rule.TLD] = append(BlacklistCache.class1Rules[rule.TLD], newRule)
+			BlacklistCache.class1Rules[*rule.TLD] = append(BlacklistCache.class1Rules[*rule.TLD], newRule)
 
 			//BlacklistCache.class1Rules[rule.TLD] = append(BlacklistCache.class1Rules[rule.TLD], regexp.MustCompile(rule.Pattern))
 
 		case 2:
-			if _, ok := BlacklistCache.class2Rules[rule.TLD]; !ok {
-				BlacklistCache.class2Rules[rule.TLD] = map[string][]blacklistRule{}
+			if rule.TLD == nil {
+				system.Console.Warningf("Rule '%s' is class 2 but has a null TLD; skipping", rule.Pattern)
+				continue
+			} else if rule.SLD == nil {
+				system.Console.Warningf("Rule '%s' is class 2 but has a null SLD; skipping", rule.Pattern)
+				continue
 			}
 
-			if _, ok := BlacklistCache.class2Rules[rule.TLD][rule.SLD]; !ok {
-				BlacklistCache.class2Rules[rule.TLD][rule.SLD] = []blacklistRule{}
+			if _, ok := BlacklistCache.class2Rules[*rule.TLD]; !ok {
+				BlacklistCache.class2Rules[*rule.TLD] = map[string][]blacklistRule{}
+			}
+
+			if _, ok := BlacklistCache.class2Rules[*rule.TLD][*rule.SLD]; !ok {
+				BlacklistCache.class2Rules[*rule.TLD][*rule.SLD] = []blacklistRule{}
 			}
 
 			newRule, ret := addRule(rule)
@@ -104,7 +117,7 @@ func ReadBlacklist(callback functions.ProgressCallback) {
 				return
 			}
 
-			BlacklistCache.class2Rules[rule.TLD][rule.SLD] = append(BlacklistCache.class2Rules[rule.TLD][rule.SLD], newRule)
+			BlacklistCache.class2Rules[*rule.TLD][*rule.SLD] = append(BlacklistCache.class2Rules[*rule.TLD][*rule.SLD], newRule)
 
 			//blacklistRule, err := newRule(rule.Pattern, rule.Expires)
 			//

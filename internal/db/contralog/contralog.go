@@ -26,7 +26,7 @@ func Setup() {
 
 	dbURL, err = url.Parse(system.ContraLogURL)
 	if err != nil {
-		system.Console.Error("invalid ContraLog database URL")
+		system.Console.Error("Invalid ContraLog database URL")
 		panic(err)
 	}
 	system.Console.Info("ContraLog address: ", dbURL.Host)
@@ -44,17 +44,21 @@ func connect() {
 
 	defer func(){
 		if r := recover(); r != nil {
-			system.Console.Error("recovered from panic")
+			if !failedOnce.Load() {
+				system.Console.Error("Recovered from panic while attempting to connect to ClickHouse database server:")
+				system.Console.Error(r)
+			}
+			err = r.(error)
 		}
 		if err != nil {
 			if !failedOnce.Load() {
-				system.Console.Error("failed to connect to ClickHouse database server with error:")
+				system.Console.Error("Failed to connect to ClickHouse database server with error:")
 				system.Console.Error(err.Error())
 				system.ContraLogOnline.Store(false)
 				failedOnce.Store(true)
 			}
 		} else {
-			system.Console.Info("connected to ClickHouse database server")
+			system.Console.Info("Connected to ClickHouse database server")
 			system.ContraLogOnline.Store(true)
 			failedOnce.Store(false)
 		}
