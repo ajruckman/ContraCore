@@ -1,7 +1,6 @@
 \c contradb contracore_mgr
 
 ----- Whitelist
-DROP TABLE contracore.whitelist;
 CREATE TABLE IF NOT EXISTS contracore.whitelist
 (
     id        INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -31,7 +30,6 @@ CREATE TABLE IF NOT EXISTS contracore.whitelist
 );
 
 ----- Blacklist
-DROP TABLE contracore.blacklist;
 CREATE TABLE IF NOT EXISTS contracore.blacklist
 (
     id      INT  NOT NULL GENERATED ALWAYS AS IDENTITY,
@@ -108,7 +106,7 @@ CREATE TABLE IF NOT EXISTS contracore.config
 );
 
 ----- Lease details
-CREATE OR REPLACE VIEW lease_details AS
+CREATE OR REPLACE VIEW contracore.lease_details AS
 SELECT lease.time, lease.op, lease.mac, lease.ip, lease.hostname, lease.vendor
 FROM contracore.lease
 WHERE (id) IN (
@@ -118,7 +116,7 @@ WHERE (id) IN (
 ORDER BY id DESC;
 
 ----- Distinct OUI vendors
-CREATE OR REPLACE VIEW oui_vendors AS
+CREATE OR REPLACE VIEW contracore.oui_vendors AS
 SELECT DISTINCT vendor
-FROM oui
+FROM contracore.oui
 ORDER BY vendor;

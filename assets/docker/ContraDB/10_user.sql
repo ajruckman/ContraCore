@@ -1,5 +1,8 @@
 ﻿\c contradb contraweb_mgr
 
+DROP TABLE IF EXISTS contraweb.user_session;
+DROP TABLE IF EXISTS contraweb.user;
+
 CREATE TABLE IF NOT EXISTS contraweb.user
 (
     username VARCHAR(16) NOT NULL,
@@ -7,6 +10,7 @@ CREATE TABLE IF NOT EXISTS contraweb.user
     salt     VARCHAR(32) NOT NULL,
     password VARCHAR(64) NOT NULL,
     role     VARCHAR(13) NOT NULL,
+    macs     MACADDR[]   NOT NULL DEFAULT ARRAY []::MACADDR[],
 
     CONSTRAINT user_pk PRIMARY KEY (username),
 

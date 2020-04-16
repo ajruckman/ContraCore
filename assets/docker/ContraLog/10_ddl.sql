@@ -18,7 +18,7 @@ DROP TABLE IF EXISTS contralog.log_top_blocked;
 CREATE VIEW contralog.log_top_blocked AS
 SELECT client, client_hostname AS hostname, client_vendor AS vendor, question, count(question) AS c
 FROM contralog.log
-WHERE action = 'respond.block'
+WHERE action LIKE 'block.%'
 GROUP BY client, hostname, vendor, question
 ORDER BY c DESC;
 
@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS contralog.log_top_blocked_per_day;
 CREATE VIEW contralog.log_top_blocked_per_day AS
 SELECT event_date, client, client_hostname AS hostname, client_vendor AS vendor, question, count(question) AS c
 FROM contralog.log
-WHERE action = 'respond.block'
+WHERE action LIKE 'block.%'
 GROUP BY event_date, client, hostname, vendor, question
 HAVING c > 10
 ORDER BY event_date, c DESC;
