@@ -149,23 +149,6 @@ func interpret(c client, line string) {
 			return
 		}
 
-		// Re-cache blacklist rules
-		begin = time.Now()
-		cache.ReadBlacklist(func(progress string) bool {
-			system.Console.Info(progress)
-			err = sendString(c, fmt.Sprintf("gen_rules.recache_progress %s", progress))
-			return err != nil
-		})
-		end = time.Now()
-
-		msg = "Blacklist rules re-cached in " + end.Sub(begin).String()
-		system.Console.Infof("netmgr: " + msg)
-		err = sendString(c, fmt.Sprintf("gen_rules.recached_in "+msg))
-		handleErr(err, "netmgr: Failed to send blacklist rule re-cache time to client "+c.address, "")
-		if err != nil {
-			return
-		}
-
 		// Complete
 		err = sendString(c, fmt.Sprintf("gen_rules.complete"))
 		handleErr(err, "netmgr: Failed to send gen_rules.complete message to client "+c.address, "")
@@ -201,6 +184,34 @@ func interpret(c client, line string) {
 		contradb.ReadConfig()
 		err := sendString(c, fmt.Sprintf("reload_config.complete"))
 		handleErr(err, "netmgr: Failed to send reload_config.complete message to client "+c.address, "")
+
+	case "reload_blacklist":
+		if online := system.ContraDBOnline.Load(); !online {
+			handleErr(&contradb.ErrContraDBOffline{}, "netmgr: reload_blacklist command received but ContraDB is offline; doing nothing", "reload_blacklist.contradb_offline")
+			return
+		}
+
+		system.Console.Info("netmgr: Received reload_blacklist; re-caching blacklist rules")
+
+		begin := time.Now()
+		cache.ReadBlacklist(func(progress string) bool {
+			system.Console.Info(progress)
+			err := sendString(c, fmt.Sprintf("reload_blacklist.reload_progress %s", progress))
+			return err != nil
+		})
+		end := time.Now()
+
+		msg := "Blacklist rules re-cached in " + end.Sub(begin).String()
+		system.Console.Infof("netmgr: " + msg)
+		err := sendString(c, fmt.Sprintf("reload_blacklist.reloaded_in "+msg))
+		handleErr(err, "netmgr: Failed to send blacklist rule re-cache time to client "+c.address, "")
+		if err != nil {
+			return
+		}
+
+		// Complete
+		err = sendString(c, fmt.Sprintf("reload_blacklist.complete"))
+		handleErr(err, "netmgr: Failed to send reload_blacklist.complete message to client "+c.address, "")
 
 	case "reload_whitelist":
 		if online := system.ContraDBOnline.Load(); !online {

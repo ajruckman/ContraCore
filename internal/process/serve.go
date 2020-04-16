@@ -42,7 +42,7 @@ func DNS(name string, next plugin.Handler, ctx context.Context, w dns.ResponseWr
 		return dns.RcodeSuccess, w.WriteMsg(responseWithCode(r, 15)) // 15 = max valid unassigned RCODE
 	}
 
-	lease, found := getLeaseByIP(q._client)
+	leases, found := getLeasesByIP(q._client)
 	if found {
 		m := lease.MAC.String()
 		q.mac = &m

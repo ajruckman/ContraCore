@@ -19,7 +19,7 @@ import (
 var (
 	dhcpHostnameToLeases     sync.Map
 	dhcpHostnameToLeasesLock sync.Mutex
-	dhcpIPToLease            sync.Map
+	dhcpIPToLeases           sync.Map
 	dhcpIPToLeaseLock        sync.Mutex
 
 	dhcpRefreshInterval = time.Second * 15
@@ -36,13 +36,21 @@ func cacheDHCP() (ipsSeen, hostnamesSeen int, err error) {
 	dhcpIPToLeaseLock.Lock()
 
 	dhcpHostnameToLeases = sync.Map{}
-	dhcpIPToLease = sync.Map{}
+	dhcpIPToLeases = sync.Map{}
 
-	dhcpHostnameToLeasesTemp := map[string][]dbschema.LeaseDetails{}
+	var (
+		dhcpIPToLeasesTemp       = map[string][]dbschema.LeaseDetailsByIP{}
+		dhcpHostnameToLeasesTemp = map[string][]dbschema.LeaseDetailsByIP{}
+	)
 
 	for _, lease := range leases {
-		dhcpIPToLease.Store(lease.IP.String(), lease)
-		ipsSeen++
+		//dhcpIPToLeases.Store(lease.IP.String(), lease)
+
+		if _, exists := dhcpIPToLeasesTemp[lease.IP.String()]; !exists {
+			ipsSeen++
+			dhcpIPToLeasesTemp[lease.IP.String()] = []dbschema.LeaseDetailsByIP{}
+		}
+		dhcpIPToLeasesTemp[lease.IP.String()] = append(dhcpIPToLeasesTemp[lease.IP.String()], lease)
 
 		if lease.Hostname == nil {
 			continue
@@ -51,9 +59,13 @@ func cacheDHCP() (ipsSeen, hostnamesSeen int, err error) {
 		hostname := strings.ToLower(*lease.Hostname)
 		if _, exists := dhcpHostnameToLeasesTemp[hostname]; !exists {
 			hostnamesSeen++
-			dhcpHostnameToLeasesTemp[hostname] = []dbschema.LeaseDetails{}
+			dhcpHostnameToLeasesTemp[hostname] = []dbschema.LeaseDetailsByIP{}
 		}
 		dhcpHostnameToLeasesTemp[hostname] = append(dhcpHostnameToLeasesTemp[hostname], lease)
+	}
+
+	for ip, leases := range dhcpIPToLeasesTemp {
+		dhcpIPToLeases.Store(ip, leases)
 	}
 
 	for hostname, leases := range dhcpHostnameToLeasesTemp {
@@ -78,33 +90,36 @@ func dhcpRefreshWorker() {
 		} else if err != nil {
 			Err(err)
 		} else {
-			system.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
+			_ = began
+			_ = ipsSeen
+			_ = hostnamesSeen
+			//system.Console.Infof("DHCP lease cache refreshed in %v. %d distinct IPs and %d distinct hostnames found.", time.Since(began), ipsSeen, hostnamesSeen)
 			dhcpRefreshFailed.Store(false)
 		}
 	}
 }
 
-func getLeasesByHostname(hostname string) ([]dbschema.LeaseDetails, bool) {
+func getLeasesByHostname(hostname string) ([]dbschema.LeaseDetailsByIP, bool) {
 	dhcpHostnameToLeasesLock.Lock()
 	v, ok := dhcpHostnameToLeases.Load(hostname)
 	dhcpHostnameToLeasesLock.Unlock()
 
 	if ok {
-		return v.([]dbschema.LeaseDetails), ok
+		return v.([]dbschema.LeaseDetailsByIP), ok
 	} else {
-		return []dbschema.LeaseDetails{}, ok
+		return []dbschema.LeaseDetailsByIP{}, ok
 	}
 }
 
-func getLeaseByIP(ip net.IP) (dbschema.LeaseDetails, bool) {
+func getLeasesByIP(ip net.IP) ([]dbschema.LeaseDetailsByIP, bool) {
 	dhcpIPToLeaseLock.Lock()
-	v, ok := dhcpIPToLease.Load(ip.String())
+	v, ok := dhcpIPToLeases.Load(ip.String())
 	dhcpIPToLeaseLock.Unlock()
 
 	if ok {
-		return v.(dbschema.LeaseDetails), ok
+		return v.([]dbschema.LeaseDetailsByIP), ok
 	} else {
-		return dbschema.LeaseDetails{}, ok
+		return []dbschema.LeaseDetailsByIP{}, ok
 	}
 }
 
@@ -185,16 +200,22 @@ func respondByPTR(q *queryContext) (ret bool, rcode int, err error) {
 
 		ip := net.ParseIP(bits[4] + "." + bits[3] + "." + bits[2] + "." + bits[1])
 
-		if v, ok := getLeaseByIP(ip); ok {
-			if v.Hostname == nil {
-				return
+		if leases, ok := getLeasesByIP(ip); ok {
+			q.action = ActionDDNSPTR
+
+			var values []string
+
+			for _, lease := range leases {
+				if lease.Hostname == nil {
+					return
+				}
+
+				values = append(values, *lease.Hostname)
 			}
 
-			q.action = ActionDDNSPTR
-			//q.Action = "ddns-ptr"
-
-			m := genResponse(q.r, q._question.Qtype, *v.Hostname)
+			m := genResponse(q.r, q._question.Qtype, values...)
 			err := q.respond(m)
+
 			return true, dns.RcodeSuccess, err
 		}
 	}

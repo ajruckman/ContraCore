@@ -146,15 +146,13 @@ SELECT;
 
 SELECT *
 FROM (
-         SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS h
-         FROM numbers(7 * 24)
-         ) AS s1
-         ANY
-         JOIN
-     (
-         SELECT * FROM log
-         ) AS s2
-     ON s2.time BETWEEN s1.h - toIntervalHour(1) AND s1.h;
+     SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS h
+     FROM numbers(7 * 24)
+) AS s1
+ANY JOIN (
+    SELECT * FROM log
+) AS s2
+ON s2.time BETWEEN s1.h - toIntervalHour(1) AND s1.h;
 
 
 SELECT now() - toIntervalDay(7) + (number * 60 * 60) AS h

@@ -1,22 +1,38 @@
 \c contradb contracore_mgr
 
-CREATE OR REPLACE VIEW distinct_lease_clients AS
-SELECT l.time, l.mac, l.hostname, o.vendor
-FROM lease l
+DROP VIEW IF EXISTS contracore.lease_details_by_mac;
+CREATE OR REPLACE VIEW contracore.lease_details_by_mac AS
+SELECT l.time, l.mac, l.ip, l.hostname, o.vendor
+FROM contracore.lease l
          LEFT OUTER JOIN oui o ON o.mac = left(l.mac::TEXT, 8)
-WHERE l.id IN (
+WHERE time > now() - INTERVAL '3 days'
+  AND l.id IN (
     SELECT max(id) AS id
-    FROM lease l
+    FROM contracore.lease
     GROUP BY mac
 )
+  AND op != 'del'
 ORDER BY time;
 
-CREATE OR REPLACE VIEW lease_vendor_counts AS
+DROP VIEW IF EXISTS contracore.lease_details_by_ip;
+CREATE OR REPLACE VIEW contracore.lease_details_by_ip AS
+SELECT l.time, l.ip, l.mac, l.hostname, l.vendor
+FROM contracore.lease l
+WHERE time > now() - INTERVAL '3 days'
+  AND (id) IN (
+    SELECT max(id)
+    FROM contracore.lease
+    GROUP BY ip
+)
+  AND op != 'del'
+ORDER BY id DESC;
+
+CREATE OR REPLACE VIEW contracore.lease_vendor_counts AS
 SELECT vendor, count(vendor) AS c
-FROM lease l
+FROM contracore.lease l
 WHERE id IN (
     SELECT max(id) AS id
-    FROM lease
+    FROM contracore.lease
     WHERE time > now() - INTERVAL '7 days'
     GROUP BY mac
 )
